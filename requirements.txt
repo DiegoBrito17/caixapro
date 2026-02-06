@@ -8,5 +8,4 @@ openpyxl==3.1.5
 
 # Opcional - para gerar PDFs
 weasyprint>=60.0
-# cache-bust 2026-02-06
-
+# cache-bust 2026-02-06-02
