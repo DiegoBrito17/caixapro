@@ -2771,8 +2771,7 @@ def exportar_todos_caixas():
     from flask import Response
     
     output = StringIO()
-    output.write('\ufeff')  # BOM UTF-8 para Excel PT-BR
-    writer = csv.writer(output, delimiter=',')
+    writer = csv.writer(output, delimiter=';')
 
     
     # Cabeçalho
@@ -2804,7 +2803,7 @@ def exportar_todos_caixas():
     
     output.seek(0)
     return Response(
-        output.getvalue(),
+        output.getvalue().encode('utf-8-sig'),
         mimetype='text/csv; charset=utf-8',
         headers={
             'Content-Disposition': 'attachment; filename=todos_caixas.csv'
@@ -2833,8 +2832,7 @@ def exportar_excel_caixa(caixa_id):
         return redirect(url_for('dashboard'))
     
     output = StringIO()
-    output.write('\ufeff')  # BOM UTF-8 (ESSENCIAL)
-    writer = csv.writer(output, delimiter=',')
+    writer = csv.writer(output, delimiter=';')
     
     # Cabeçalho com TODAS as colunas solicitadas
     writer.writerow([
@@ -3004,7 +3002,7 @@ def exportar_excel_caixa(caixa_id):
     
     output.seek(0)
     return Response(
-        output.getvalue(),
+        output.getvalue().encode('utf-8-sig'),
         mimetype='text/csv; charset=utf-8',
         headers={'Content-Disposition': 'attachment; filename=todos_caixas.csv'}
     )
