@@ -1740,14 +1740,20 @@
             });
             
             // Toggle mobile sidebar
+            let ignoreOutsideClose = false;
             mobileMenuToggle.on('click touchstart', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 sidebar.toggleClass('mobile-open');
+                ignoreOutsideClose = true;
+                setTimeout(function() { ignoreOutsideClose = false; }, 300);
             });
             
             // Fechar sidebar mobile ao clicar fora
             $(document).on('click', function(event) {
+                if (ignoreOutsideClose) {
+                    return;
+                }
                 if (!$(event.target).closest('.sidebar, .mobile-menu-toggle').length) {
                     if ($(window).width() <= 992) {
                         sidebar.removeClass('mobile-open');
