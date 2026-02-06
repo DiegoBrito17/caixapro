@@ -408,6 +408,15 @@
             // Mostrar carregamento
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processando...';
+
+            // Converter saldo inicial para formato numérico (pt-BR -> float)
+            if (saldoInicialInput) {
+                const valor = saldoInicialInput.value
+                    .replace(/\./g, '')
+                    .replace(',', '.')
+                    .replace(/[^\d.]/g, '');
+                saldoInicialInput.value = valor || '0';
+            }
         });
 
         // Máscara de moeda brasileira no saldo inicial
