@@ -1362,7 +1362,7 @@
             
             <!-- Menu Mobile Toggle -->
             <div class="mobile-menu-toggle">
-                <button class="btn btn-primary btn-icon mobile-menu-toggle-btn" type="button">
+                <button class="btn btn-primary btn-icon mobile-menu-toggle-btn" type="button" data-sidebar-toggle="mobile">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
@@ -1513,7 +1513,7 @@
             <nav class="top-navbar">
                 <div class="navbar-left">
                     <div class="mobile-menu-toggle">
-                        <button class="btn btn-primary btn-icon mobile-menu-toggle-btn" type="button">
+                        <button class="btn btn-primary btn-icon mobile-menu-toggle-btn" type="button" data-sidebar-toggle="mobile">
                             <i class="fas fa-bars"></i>
                         </button>
                     </div>
@@ -1726,7 +1726,7 @@
             const sidebar = $('#sidebar');
             const mainContent = $('#mainContent');
             const sidebarToggle = $('#sidebarToggle');
-            const mobileMenuToggle = $('.mobile-menu-toggle-btn');
+            const mobileMenuToggle = $('[data-sidebar-toggle="mobile"]');
             
             // Toggle desktop sidebar
             sidebarToggle.click(function() {
@@ -1740,7 +1740,9 @@
             });
             
             // Toggle mobile sidebar
-            mobileMenuToggle.on('click', function() {
+            mobileMenuToggle.on('click touchstart', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
                 sidebar.toggleClass('mobile-open');
             });
             
