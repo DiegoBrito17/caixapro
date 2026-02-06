@@ -6,4 +6,7 @@ psycopg[binary]==3.2.3
 psycopg2-binary==2.9.9
 
 # Opcional - para gerar PDFs
-# weasyprint>=60.0
+weasyprint>=60.0
+# cache-bust 2026-02-06
+
+
