@@ -409,6 +409,40 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processando...';
         });
+
+        // Máscara de moeda brasileira no saldo inicial
+        function aplicarMascaraMoeda(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor.length === 0) {
+                input.value = '0,00';
+                return;
+            }
+            if (valor.length === 1) valor = '00' + valor;
+            if (valor.length === 2) valor = '0' + valor;
+            const inteiros = valor.slice(0, -2);
+            const decimais = valor.slice(-2);
+            let inteirosFormatados = '';
+            for (let i = inteiros.length - 1, count = 0; i >= 0; i--, count++) {
+                if (count > 0 && count % 3 === 0) {
+                    inteirosFormatados = '.' + inteirosFormatados;
+                }
+                inteirosFormatados = inteiros[i] + inteirosFormatados;
+            }
+            input.value = (inteirosFormatados || '0') + ',' + decimais;
+        }
+
+        const saldoInicialInput = document.querySelector('.currency-input[name="saldo_inicial"]');
+        if (saldoInicialInput) {
+            aplicarMascaraMoeda(saldoInicialInput);
+            saldoInicialInput.addEventListener('input', function() {
+                const pos = saldoInicialInput.selectionStart || 0;
+                const original = saldoInicialInput.value;
+                aplicarMascaraMoeda(saldoInicialInput);
+                const diff = saldoInicialInput.value.length - original.length;
+                const newPos = pos + diff;
+                saldoInicialInput.setSelectionRange(newPos, newPos);
+            });
+        }
     </script>
 </body>
 </html>
