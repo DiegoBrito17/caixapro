@@ -1552,7 +1552,7 @@
             <!-- Top Navbar -->
             <nav class="top-navbar">
                 <div class="navbar-left">
-                    <div class="mobile-menu-toggle" style="display: none;">
+                    <div class="mobile-menu-toggle d-lg-none">
                         <button class="btn btn-primary btn-icon mobile-menu-toggle-btn" type="button" data-sidebar-toggle="mobile">
                             <i class="fas fa-bars"></i>
                         </button>
@@ -1790,18 +1790,6 @@
                 sidebar.removeClass('mobile-open');
                 sidebarOverlay.removeClass('active');
             }
-
-            function syncMobileMenuVisibility() {
-                if (window.innerWidth <= 992) {
-                    mobileMenuToggle.closest('.mobile-menu-toggle').css('display', 'flex');
-                } else {
-                    mobileMenuToggle.closest('.mobile-menu-toggle').css('display', 'none');
-                    closeMobileSidebar();
-                }
-            }
-
-            syncMobileMenuVisibility();
-            $(window).on('resize', syncMobileMenuVisibility);
 
             mobileMenuToggle.on('click touchstart', function(event) {
                 event.preventDefault();
