@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import ProgrammingError
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -526,7 +527,12 @@ def login():
         else:
             flash('❌ Credenciais inválidas!', 'danger')
     
-    usuarios = Usuario.query.filter_by(ativo=True).order_by(Usuario.nome).all()
+    try:
+        usuarios = Usuario.query.filter_by(ativo=True).order_by(Usuario.nome).all()
+    except ProgrammingError:
+        db.session.rollback()
+        _ensure_db_ready()
+        usuarios = Usuario.query.filter_by(ativo=True).order_by(Usuario.nome).all()
     hoje = datetime.now().date()
     caixas_abertos_hoje = Caixa.query.filter_by(data=hoje, status='ABERTO').order_by(Caixa.turno).all()
     
