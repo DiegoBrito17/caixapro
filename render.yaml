@@ -3,6 +3,7 @@ services:
     name: sistema-caixa
     env: python
     plan: free
+    runtime: python-3.11
     buildCommand: "pip install -r requirements.txt"
     startCommand: "bash -c \"python migrate_sqlite_to_postgres.py && gunicorn app:app\""
     envVars:
