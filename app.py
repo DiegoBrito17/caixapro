@@ -20,10 +20,20 @@ db_path = os.path.join(basedir, 'database')
 # Criar pasta database se não existir
 os.makedirs(db_path, exist_ok=True)
 # Render/Prod: usar DATABASE_URL (PostgreSQL). Dev local: SQLite.
-database_url = os.environ.get('DATABASE_URL')
+# Railway/Render podem usar nomes diferentes de env.
+database_url = (
+    os.environ.get('DATABASE_URL')
+    or os.environ.get('POSTGRES_URL')
+    or os.environ.get('POSTGRES_PRISMA_URL')
+    or os.environ.get('POSTGRES_URL_NON_POOLING')
+)
+if database_url:
+    database_url = database_url.strip().strip('"').strip("'")
 if database_url:
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    if database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_path, 'caixa.db')
