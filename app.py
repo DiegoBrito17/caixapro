@@ -45,13 +45,7 @@ db = SQLAlchemy(app)
 
 # ==================== DB INIT (AUTO) ====================
 
-_db_initialized = False
-
-@app.before_request
-def ensure_db_initialized():
-    global _db_initialized
-    if _db_initialized:
-        return
+def _ensure_db_ready():
     with app.app_context():
         db.create_all()
         # Correção automática: Adicionar coluna acesso_relatorios se não existir
@@ -67,7 +61,25 @@ def ensure_db_initialized():
             init_db()
         except Exception:
             pass
-    _db_initialized = True
+
+# Executar no startup para evitar erro de tabela inexistente no primeiro request
+try:
+    _ensure_db_ready()
+except Exception:
+    pass
+
+_db_initialized = False
+
+@app.before_request
+def ensure_db_initialized():
+    global _db_initialized
+    if _db_initialized:
+        return
+    try:
+        _ensure_db_ready()
+        _db_initialized = True
+    except Exception:
+        pass
 
 # ==================== CONTEXT PROCESSORS ====================
 
