@@ -43,6 +43,32 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# ==================== DB INIT (AUTO) ====================
+
+_db_initialized = False
+
+@app.before_request
+def ensure_db_initialized():
+    global _db_initialized
+    if _db_initialized:
+        return
+    with app.app_context():
+        db.create_all()
+        # Correção automática: Adicionar coluna acesso_relatorios se não existir
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE usuario ADD COLUMN acesso_relatorios BOOLEAN DEFAULT 0'))
+                conn.commit()
+        except Exception:
+            pass
+        # Criar registros padrão (inclui ADMIN MASTER e ADMIN)
+        try:
+            init_db()
+        except Exception:
+            pass
+    _db_initialized = True
+
 # ==================== CONTEXT PROCESSORS ====================
 
 @app.context_processor
