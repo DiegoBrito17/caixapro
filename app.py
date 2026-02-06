@@ -2771,7 +2771,7 @@ def exportar_todos_caixas():
     from flask import Response
     
     output = StringIO()
-    writer = csv.writer(output, delimiter=';')
+    writer = csv.writer(output, delimiter=',')
 
     
     # Cabeçalho
@@ -2832,7 +2832,7 @@ def exportar_excel_caixa(caixa_id):
         return redirect(url_for('dashboard'))
     
     output = StringIO()
-    writer = csv.writer(output, delimiter=';')
+    writer = csv.writer(output, delimiter=',')
     
     # Cabeçalho com TODAS as colunas solicitadas
     writer.writerow([
