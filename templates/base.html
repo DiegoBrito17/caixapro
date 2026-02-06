@@ -1304,6 +1304,32 @@
             .mobile-menu-toggle {
                 display: flex !important;
             }
+
+            .mobile-menu-toggle {
+                position: fixed;
+                top: 16px;
+                left: 16px;
+                z-index: 1200;
+            }
+
+            .mobile-menu-toggle .btn {
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 1100;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
         }
         
         @media (max-width: 768px) {
@@ -1507,6 +1533,9 @@
             </nav>
         </aside>
         
+        <!-- Overlay Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
             <!-- Top Navbar -->
@@ -1727,6 +1756,7 @@
             const mainContent = $('#mainContent');
             const sidebarToggle = $('#sidebarToggle');
             const mobileMenuToggle = $('[data-sidebar-toggle="mobile"]');
+            const sidebarOverlay = $('#sidebarOverlay');
             
             // Toggle desktop sidebar
             sidebarToggle.click(function() {
@@ -1740,25 +1770,28 @@
             });
             
             // Toggle mobile sidebar
-            let ignoreOutsideClose = false;
+            function openMobileSidebar() {
+                sidebar.addClass('mobile-open');
+                sidebarOverlay.addClass('active');
+            }
+
+            function closeMobileSidebar() {
+                sidebar.removeClass('mobile-open');
+                sidebarOverlay.removeClass('active');
+            }
+
             mobileMenuToggle.on('click touchstart', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                sidebar.toggleClass('mobile-open');
-                ignoreOutsideClose = true;
-                setTimeout(function() { ignoreOutsideClose = false; }, 300);
+                if (sidebar.hasClass('mobile-open')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
             });
-            
-            // Fechar sidebar mobile ao clicar fora
-            $(document).on('click', function(event) {
-                if (ignoreOutsideClose) {
-                    return;
-                }
-                if (!$(event.target).closest('.sidebar, .mobile-menu-toggle').length) {
-                    if ($(window).width() <= 992) {
-                        sidebar.removeClass('mobile-open');
-                    }
-                }
+
+            sidebarOverlay.on('click touchstart', function() {
+                closeMobileSidebar();
             });
             
             // ==================== THEME TOGGLE ====================
