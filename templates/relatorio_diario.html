@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Relatório Diário{% endblock %}
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-bar me-2"></i>Relatório Consolidado do Dia
+            </h5>
+            <form method="POST" class="d-flex gap-2">
+                <input type="date" name="data" value="{{ data }}" class="form-control form-control-sm" style="width: 180px;">
+                <button type="submit" class="btn btn-light btn-sm">
+                    <i class="fas fa-search me-1"></i> Filtrar
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <!-- RESUMO DO DIA -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Data</h6>
+                            <h4>{{ relatorio.data.strftime('%d/%m/%Y') }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Caixas</h6>
+                            <h4>{{ relatorio.total_caixas }}</h4>
+                            <small class="opacity-75">
+                                {{ relatorio.caixas_abertos }} aberto(s) / {{ relatorio.caixas_fechados }} fechado(s)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Total Vendas</h6>
+                            <h4>{{ format_currency(relatorio.total_vendas) }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Saldo do Dia</h6>
+                            <h4>{{ format_currency(relatorio.saldo_dia) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETALHES POR TURNO -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Detalhamento por Turno</h6>
+                </div>
+                <div class="card-body">
+                    {% if relatorio.turnos %}
+                    <div class="row">
+                        {% for turno, dados in relatorio.turnos.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card {% if dados.status == 'ABERTO' %}border-danger{% else %}border-success{% endif %}">
+                                <div class="card-header {% if dados.status == 'ABERTO' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+                                    <h6 class="mb-0">{{ turno }} 
+                                        <span class="badge {% if dados.status == 'ABERTO' %}bg-warning text-dark{% else %}bg-light text-dark{% endif %} float-end">
+                                            {{ dados.status }}
+                                        </span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Operador:</strong> {{ dados.caixa.operador.nome }}</p>
+                                    <p><strong>Saldo Inicial:</strong> {{ format_currency(dados.caixa.saldo_inicial) }}</p>
+                                    <p><strong>Total Vendas:</strong> {{ format_currency(dados.totais.total_vendas) }}</p>
+                                    <p><strong>Despesas:</strong> {{ format_currency(dados.totais.despesas) }}</p>
+                                    <p><strong>Sangrias:</strong> {{ format_currency(dados.totais.sangrias) }}</p>
+                                    <p><strong>Saldo Final:</strong> {{ format_currency(dados.totais.saldo_atual) }}</p>
+                                    <div class="mt-3">
+                                        <!-- CORRIGIDO: Agora vai para a página de visualização do caixa -->
+                                        <a href="{{ url_for('admin_visualizar_caixa', caixa_id=dados.caixa.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye me-1"></i> Ver Detalhes Completos
+                                        </a>
+                                        {% if dados.status == 'ABERTO' %}
+                                        <form method="POST" action="{{ url_for('admin_fechar_caixa_forcado', caixa_id=dados.caixa.id) }}" 
+                                              style="display: inline;" 
+                                              onsubmit="return confirm('Fechar caixa do turno {{ turno }} forçadamente?')">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-lock me-1"></i> Fechar
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p>Nenhum caixa encontrado para esta data</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- RESUMO FINANCEIRO -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Resumo Financeiro do Dia</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Receitas</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Total Vendas</td>
+                                    <td class="text-end text-success">{{ format_currency(relatorio.total_vendas) }}</td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td><strong>TOTAL RECEITAS</strong></td>
+                                    <td class="text-end"><strong>{{ format_currency(relatorio.total_vendas) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Despesas</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Total Despesas</td>
+                                    <td class="text-end text-danger">{{ format_currency(relatorio.total_despesas) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Sangrias</td>
+                                    <td class="text-end text-danger">{{ format_currency(relatorio.total_sangrias) }}</td>
+                                </tr>
+                                <tr class="table-danger">
+                                    <td><strong>TOTAL DESPESAS</strong></td>
+                                    <td class="text-end"><strong>{{ format_currency(relatorio.total_despesas + relatorio.total_sangrias) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert {% if relatorio.saldo_dia >= 0 %}alert-success{% else %}alert-danger{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-{% if relatorio.saldo_dia >= 0 %}arrow-up{% else %}arrow-down{% endif %} me-2"></i>
+                                            Resultado Final do Dia
+                                        </h5>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-0">{{ format_currency(relatorio.saldo_dia) }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card .card-header {
+    border-bottom: none;
+}
+
+.badge {
+    font-size: 0.75em;
+    padding: 3px 6px;
+}
+</style>
+{% endblock %}

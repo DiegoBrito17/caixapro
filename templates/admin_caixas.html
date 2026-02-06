@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Gerenciar Caixas - Admin{% endblock %}
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Gerenciar Todos os Caixas</h5>
+            <div>
+                <span class="badge bg-light text-dark me-2">
+                    Total: {{ caixas.total }}
+                </span>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Voltar
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- FILTROS -->
+            <div class="mb-3">
+                <form method="GET" class="row g-2">
+                    <div class="col-md-3">
+                        <select class="form-select" name="status" onchange="this.form.submit()">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Todos os Status</option>
+                            <option value="aberto" {% if status_filter == 'aberto' %}selected{% endif %}>Apenas Abertos</option>
+                            <option value="fechado" {% if status_filter == 'fechado' %}selected{% endif %}>Apenas Fechados</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- TABELA -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Data</th>
+                            <th>Turno</th>
+                            <th>Operador</th>
+                            <th>Status</th>
+                            <th>Saldo Inicial</th>
+                            <th>Saldo Final</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caixa in caixas.items %}
+                        <tr>
+                            <td><strong>#{{ caixa.id }}</strong></td>
+                            <td>{{ caixa.data.strftime('%d/%m/%Y') }}</td>
+                            <td><span class="badge bg-info">{{ caixa.turno }}</span></td>
+                            <td>
+                                <i class="fas fa-user text-muted me-1"></i>
+                                {{ caixa.operador.nome }}
+                            </td>
+                            <td>
+                                {% if caixa.status == 'ABERTO' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-door-open me-1"></i> ABERTO
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-door-closed me-1"></i> FECHADO
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-success fw-bold">
+                                    {{ format_currency(caixa.saldo_inicial) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if caixa.saldo_final %}
+                                <span class="text-primary fw-bold">
+                                    {{ format_currency(caixa.saldo_final) }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <!-- VISUALIZAR -->
+                                    <a href="{{ url_for('admin_visualizar_caixa', caixa_id=caixa.id) }}" 
+                                       class="btn btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <!-- EDITAR -->
+                                    <a href="{{ url_for('admin_editar_caixa', caixa_id=caixa.id) }}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <!-- REABRIR/FECHAR -->
+                                    {% if caixa.status == 'FECHADO' %}
+                                    <form method="POST" action="{{ url_for('admin_reabrir_caixa', caixa_id=caixa.id) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-success" title="Reabrir"
+                                                onclick="return confirm('Deseja reabrir este caixa?')">
+                                            <i class="fas fa-redo"></i>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" action="{{ url_for('admin_fechar_caixa_forcado', caixa_id=caixa.id) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-secondary" title="Fechar Forçado"
+                                                onclick="return confirm('Forçar fechamento deste caixa?')">
+                                            <i class="fas fa-lock"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    <!-- EXCLUIR -->
+                                    <button type="button" class="btn btn-danger" title="Excluir"
+                                            onclick="confirmarExclusaoCaixa({{ caixa.id }}, '{{ caixa.data.strftime('%d/%m/%Y') }}', '{{ caixa.turno }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-cash-register fa-2x mb-3"></i>
+                                    <p>Nenhum caixa encontrado</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- PAGINAÇÃO -->
+            {% if caixas.has_prev or caixas.has_next %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not caixas.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="?page={{ caixas.prev_num }}&status={{ status_filter }}">Anterior</a>
+                    </li>
+                    <li class="page-item active"><span class="page-link">{{ caixas.page }}</span></li>
+                    <li class="page-item {% if not caixas.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="?page={{ caixas.next_num }}&status={{ status_filter }}">Próxima</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de exclusão (oculto) -->
+<form id="formExcluirCaixa" method="POST" action="" style="display: none;">
+    <!-- Action será preenchida via JavaScript -->
+</form>
+
+<script>
+function confirmarExclusaoCaixa(caixaId, data, turno) {
+    if (confirm(`⚠️ ATENÇÃO!\n\nDeseja realmente EXCLUIR o caixa #${caixaId}?\nData: ${data}\nTurno: ${turno}\n\nIsso excluirá permanentemente:\n✅ Todas as vendas\n✅ Todos os deliveries\n✅ Todas as despesas\n✅ Todas as sangrias\n\nEsta ação NÃO PODE ser desfeita!`)) {
+        // Criar formulário dinâmico
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/caixa/${caixaId}/excluir-completo`;
+        
+        // Adicionar CSRF token (se necessário)
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        form.appendChild(csrfInput);
+        
+        // Adicionar ao corpo e submeter
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<style>
+.btn-group .btn {
+    border-radius: 4px !important;
+    margin-right: 2px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

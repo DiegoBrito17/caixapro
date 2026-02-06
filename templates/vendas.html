@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Vendas - Sistema de Caixa{% endblock %}
+{% block page_title %}Vendas{% endblock %}
+{% block page_icon %}shopping-cart{% endblock %}
+
+{% block header_buttons %}{% endblock %}
+
+{% block styles %}
+<style>
+    .vendas-kpis {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .stat-card.compact {
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        min-height: 96px;
+    }
+    .stat-card.compact .stat-card-header {
+        margin-bottom: 0.5rem;
+    }
+    .stat-card.compact .stat-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+    .stat-card.compact .stat-content h3 {
+        font-size: 1.3rem;
+        margin-bottom: 0.1rem;
+    }
+    .stat-card.compact .stat-content p {
+        font-size: 0.75rem;
+        letter-spacing: 0.2px;
+    }
+    .pay-cards .stat-card.compact {
+        padding: 0.7rem 0.85rem;
+        min-height: 78px;
+    }
+    .pay-cards .stat-card.compact .stat-content h3 {
+        font-size: 1.1rem;
+    }
+    .pay-cards .stat-card.compact .stat-content p {
+        font-size: 0.7rem;
+    }
+    .pay-cards .stat-card {
+        border-left: 4px solid transparent;
+    }
+    .pay-cards .dinheiro { border-left-color: #16a34a; }
+    .pay-cards .credito { border-left-color: #2563eb; }
+    .pay-cards .debito { border-left-color: #0ea5e9; }
+    .pay-cards .pix { border-left-color: #10b981; }
+    .pay-cards .online { border-left-color: #8b5cf6; }
+    .pay-cards .conta { border-left-color: #f59e0b; }
+    .vendas-top-tight {
+        margin-top: -6px;
+    }
+    .vendas-table .table thead th {
+        background: linear-gradient(90deg, rgba(67, 97, 238, 0.08) 0%, rgba(114, 9, 183, 0.06) 100%);
+        border-bottom: 1px solid rgba(67, 97, 238, 0.15);
+    }
+    .vendas-table .table tbody tr {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .vendas-table .table tbody tr:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    }
+    .vendas-table .tipo-pill {
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .vendas-table .tipo-mesa {
+        background: rgba(72, 149, 239, 0.12);
+        color: #2563eb;
+    }
+    .vendas-table .tipo-balcao {
+        background: rgba(100, 116, 139, 0.15);
+        color: #475569;
+    }
+    .vendas-table .valor-destaque {
+        font-weight: 700;
+        color: #111827;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid vendas-top-tight">
+    <!-- Resumo -->
+    <div class="stats-container vendas-kpis mb-3">
+        <div class="stat-card compact">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="stat-trend positive">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais.total_vendas|default(0) }}</h3>
+                <p>Total de Vendas</p>
+            </div>
+        </div>
+        <div class="stat-card compact info">
+            <div class="stat-card-header">
+                <div class="https://static.vecteezy.com/system/resources/previews/000/437/078/original/vector-statistics-icon.jpg">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais.vendas_loja|default(0) }}</h3>
+                <p>Vendas Loja</p>
+            </div>
+        </div>
+        <div class="stat-card compact success">
+            <div class="stat-card-header">
+                <div class="stat-icon success">
+                    <i class="fas fa-motorcycle"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais.vendas_delivery|default(0) }}</h3>
+                <p>Vendas Delivery</p>
+            </div>
+        </div>
+        <div class="stat-card compact warning">
+            <div class="stat-card-header">
+                <div class="stat-icon warning">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais.notas_fiscais|default(0) }}</h3>
+                <p>Notas Fiscais</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagamentos -->
+    <div class="main-card mb-3">
+        <div class="card-header bg-dark">
+            <h5 class="card-title">
+                <i class="fas fa-credit-card me-2"></i>Formas de Pagamento
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 pay-cards">
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 dinheiro">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.dinheiro|default(0) }}</h3>
+                            <p>Dinheiro</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 credito">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.credito|default(0) }}</h3>
+                            <p>Crédito</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 debito">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.debito|default(0) }}</h3>
+                            <p>Débito</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 pix">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.pix|default(0) }}</h3>
+                            <p>PIX</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 online">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.online|default(0) }}</h3>
+                            <p>Online</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 conta">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais.contas_assinadas|default(0) }}</h3>
+                            <p>Conta Assinada</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulário de Venda -->
+        <div class="col-md-5">
+            <div class="main-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-cash-register me-2"></i>Nova Venda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formVenda" method="POST" action="{{ url_for('nova_venda') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo *</label>
+                                <select class="form-select" name="tipo" required id="tipoVenda">
+                                    <option value="MESA">Mesa</option>
+                                    <option value="BALCAO">Balcão</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Número</label>
+                                <input type="number" class="form-control" name="numero" id="numeroMesa" min="1" value="1">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Valor Total (R$) *</label>
+                            <input type="text" class="form-control currency-input" name="total" placeholder="0,00" required>
+                        </div>
+                        
+                        <!-- Formas de Pagamento -->
+                        <div class="mb-3">
+                            <label class="form-label">Formas de Pagamento *</label>
+                            <div id="pagamentos-container">
+                                <div class="row mb-2 g-2">
+                                    <div class="col-md-5">
+                                        <select class="form-select" name="forma_pagamento[]" required>
+                                            <option value="">Selecione...</option>
+                                            {% for forma in formas_pagamento %}
+                                            <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control currency-input" name="valor_pagamento[]" placeholder="0,00" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" name="bandeira[]">
+                                            <option value="">Bandeira</option>
+                                            {% for bandeira in bandeiras %}
+                                            <option value="{{ bandeira.id }}">{{ bandeira.nome }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="adicionarPagamento">
+                                <i class="fas fa-plus me-1"></i> Adicionar Pagamento
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Observação</label>
+                            <textarea class="form-control" name="observacao" rows="2" placeholder="Observações sobre a venda..."></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="emitiu_nota" id="emitiu_nota">
+                            <label class="form-check-label" for="emitiu_nota">
+                                Emitiu Nota Fiscal
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i> Registrar Venda
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de Vendas -->
+        <div class="col-md-7">
+            <div class="main-card vendas-table">
+                <div class="card-header bg-success">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>Últimas Vendas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Pagamento</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas %}
+                                <tr>
+                                    <td>{{ venda.data_hora.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if venda.tipo == 'MESA' %}
+                                        <span class="tipo-pill tipo-mesa">Mesa {{ venda.numero }}</span>
+                                        {% else %}
+                                        <span class="tipo-pill tipo-balcao">Balcão</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="currency-value valor-destaque">{{ venda.total }}</td>
+                                    <td>
+                                        {% for pagamento in venda.pagamentos %}
+                                        <small class="d-block">{{ pagamento.forma_pagamento.nome }}</small>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a class="btn btn-info btn-sm" title="Detalhes" href="{{ url_for('admin_editar_venda_detalhes', venda_id=venda.id, view=1) }}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if usuario_logado and usuario_logado.acesso_configuracoes %}
+                                            <a class="btn btn-warning btn-sm" title="Editar" href="{{ url_for('admin_editar_venda_detalhes', venda_id=venda.id) }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('admin_deletar_venda_completa', venda_id=venda.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm confirm-action" title="Excluir" data-confirm="Tem certeza que deseja excluir esta venda?">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Venda -->
+<div class="modal fade" id="novaVendaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-cash-register me-2"></i>Nova Venda
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- O formulário está acima, mas pode colocar outro aqui se quiser -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Controle do número da mesa
+        $('#tipoVenda').change(function() {
+            if ($(this).val() === 'BALCAO') {
+                $('#numeroMesa').prop('disabled', true).val('');
+            } else {
+                $('#numeroMesa').prop('disabled', false).val('1');
+            }
+        });
+        
+        // Adicionar campo de pagamento
+        let paymentCount = 1;
+        
+        $('#adicionarPagamento').click(function() {
+            paymentCount++;
+            const novoCampo = `
+                <div class="row mb-2 g-2" id="payment-row-${paymentCount}">
+                    <div class="col-md-5">
+                        <select class="form-select" name="forma_pagamento[]" required>
+                            <option value="">Selecione...</option>
+                            {% for forma in formas_pagamento %}
+                            <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control currency-input" name="valor_pagamento[]" placeholder="0,00" required>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="bandeira[]">
+                            <option value="">Bandeira</option>
+                            {% for bandeira in bandeiras %}
+                            <option value="{{ bandeira.id }}">{{ bandeira.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-danger btn-sm w-100 mt-1 remover-pagamento" data-row="${paymentCount}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#pagamentos-container').append(novoCampo);
+            
+            // Aplicar máscara de moeda no novo campo
+            $(`#payment-row-${paymentCount} .currency-input`).trigger('input');
+        });
+        
+        // Remover campo de pagamento
+        $(document).on('click', '.remover-pagamento', function() {
+            const rowId = $(this).data('row');
+            if (rowId) {
+                $(`#payment-row-${rowId}`).remove();
+            } else {
+                $(this).closest('.row').remove();
+            }
+        });
+        
+        // Validar formulário
+        $('#formVenda').submit(function(e) {
+            // Converter valores formatados para números
+            let totalVenda = parseFloat($('input[name="total"]').val().replace(/\./g, '').replace(',', '.')) || 0;
+            let totalPagamentos = 0;
+            
+            $('input[name="valor_pagamento[]"]').each(function() {
+                let valor = $(this).val().replace(/\./g, '').replace(',', '.');
+                totalPagamentos += parseFloat(valor) || 0;
+            });
+            
+            if (Math.abs(totalPagamentos - totalVenda) > 0.01) {
+                e.preventDefault();
+                alert('A soma dos pagamentos (R$ ' + totalPagamentos.toFixed(2).replace('.', ',') + 
+                      ') deve ser igual ao valor da venda (R$ ' + totalVenda.toFixed(2).replace('.', ',') + ')!');
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // Formatar valores na tabela
+        $('.currency-value').each(function() {
+            let texto = $(this).text().trim();
+            let numero = texto.match(/\d+[\.,]?\d*/g);
+            if (numero) {
+                let valor = parseFloat(numero[0].replace(/\./g, '').replace(',', '.'));
+                if (!isNaN(valor)) {
+                    $(this).text('R$ ' + valor.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }));
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

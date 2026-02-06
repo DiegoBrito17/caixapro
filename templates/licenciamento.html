@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% block title %}Licenciamento - Sistema de Caixa{% endblock %}
+{% block icon %}shield-alt{% endblock %}
+{% block page_title %}Licenciamento & Segurança{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Status da Licença
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if licenca and licenca.status == 'ATIVA' %}
+                                    <span class="text-success">ATIVA</span>
+                                {% else %}
+                                    <span class="text-danger">NÃO ATIVA</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-certificate fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Dispositivos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ dispositivos|length }}/{{ licenca.max_dispositivos if licenca else 2 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-laptop fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Expiração
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if licenca and licenca.data_expiracao %}
+                                    {{ licenca.data_expiracao.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Permanente
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Backups
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ backups|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Licença Details -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Informações da Licença
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if licenca %}
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="font-weight-bold" style="width: 40%">E-mail:</td>
+                                    <td>{{ licenca.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">Status:</td>
+                                    <td>
+                                        {% if licenca.status == 'ATIVA' %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% elif licenca.status == 'EXPIRADA' %}
+                                            <span class="badge bg-danger">Expirada</span>
+                                        {% elif licenca.status == 'BLOQUEADA' %}
+                                            <span class="badge bg-warning">Bloqueada</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ licenca.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">Ativação:</td>
+                                    <td>{{ licenca.data_ativacao.strftime('%d/%m/%Y %H:%M') if licenca.data_ativacao else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">Expiração:</td>
+                                    <td>
+                                        {% if licenca.data_expiracao %}
+                                            {{ licenca.data_expiracao.strftime('%d/%m/%Y') }}
+                                            {% set dias = (licenca.data_expiracao - datetime.utcnow()).days %}
+                                            {% if dias > 0 %}
+                                                <small class="text-success d-block">{{ dias }} dias restantes</small>
+                                            {% else %}
+                                                <small class="text-danger d-block">Expirada há {{ -dias }} dias</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Permanente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold">Chave:</td>
+                                    <td>
+                                        <code class="bg-light p-1 rounded">{{ licenca.chave_ativacao }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                                onclick="navigator.clipboard.writeText('{{ licenca.chave_ativacao }}')"
+                                                title="Copiar chave">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <form method="POST" action="{{ url_for('gerar_nova_chave') }}"
+                              onsubmit="return confirm('Gerar nova chave? A antiga será invalidada!')"
+                              class="mb-2">
+                            <button type="submit" class="btn btn-warning btn-block">
+                                <i class="fas fa-key me-2"></i>Gerar Nova Chave
+                            </button>
+                        </form>
+                        
+                        <form method="POST" action="{{ url_for('bloquear_todos_dispositivos') }}"
+                              onsubmit="return confirm('Bloquear TODOS os dispositivos?')">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-user-slash me-2"></i>Bloquear Todos Dispositivos
+                            </button>
+                        </form>
+                    </div>
+                    
+                    {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Sistema não ativado.
+                        <a href="{{ url_for('ativacao') }}" class="alert-link">Clique aqui para ativar</a>.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Device Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-desktop me-2"></i>Este Dispositivo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>ID do Dispositivo:</strong></p>
+                    <code class="d-block bg-light p-2 mb-3 rounded">{{ dispositivo_id }}</code>
+                    
+                    <p class="mb-1"><strong>Endereço IP:</strong></p>
+                    <p class="text-muted">{{ request.remote_addr }}</p>
+                    
+                    <p class="mb-1"><strong>Navegador:</strong></p>
+                    <p class="text-muted">{{ request.user_agent.browser if request.user_agent.browser else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dispositivos Conectados -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-laptop me-2"></i>Dispositivos Conectados
+                    </h6>
+                    <span class="badge bg-primary">{{ dispositivos|length }} conectados</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Dispositivo</th>
+                                    <th>Último Acesso</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dispositivo in dispositivos %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="mr-3">
+                                                <i class="fas fa-laptop text-primary fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ dispositivo.nome }}</strong>
+                                                <div class="text-muted small">{{ dispositivo.endereco_ip }}</div>
+                                                <div class="text-muted small">
+                                                    <code>{{ dispositivo.dispositivo_id[:12] }}...</code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        {{ dispositivo.ultimo_acesso.strftime('%d/%m/%Y %H:%M') }}
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if dispositivo.status == 'ATIVO' %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Bloqueado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="btn-group">
+                                            {% if dispositivo.status == 'ATIVO' %}
+                                            <form method="POST" action="{{ url_for('bloquear_dispositivo', dispositivo_id=dispositivo.id) }}"
+                                                  onsubmit="return confirm('Bloquear {{ dispositivo.nome }}?')">
+                                                <button type="submit" class="btn btn-sm btn-warning" title="Bloquear">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </form>
+                                            {% else %}
+                                            <form method="POST" action="{{ url_for('desbloquear_dispositivo', dispositivo_id=dispositivo.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-success" title="Desbloquear">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            
+                                            <form method="POST" action="{{ url_for('excluir_dispositivo', dispositivo_id=dispositivo.id) }}"
+                                                  onsubmit="return confirm('Excluir {{ dispositivo.nome }} permanentemente?')">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <i class="fas fa-laptop fa-2x text-muted mb-3"></i>
+                                        <h5 class="text-muted">Nenhum dispositivo registrado</h5>
+                                        <p class="text-muted">Os dispositivos serão registrados automaticamente ao acessar o sistema</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Backups -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-database me-2"></i>Backups do Banco de Dados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Form -->
+                    <form method="POST" action="{{ url_for('upload_backup') }}" enctype="multipart/form-data" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" name="arquivo_backup" 
+                                           accept=".db" required>
+                                    <button class="btn btn-success" type="submit">
+                                        <i class="fas fa-upload me-2"></i>Carregar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="observacao" 
+                                       placeholder="Observação (opcional)">
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Apenas arquivos .db são permitidos
+                        </small>
+                    </form>
+                    
+                    <!-- Backups List -->
+                    {% if backups %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Arquivo</th>
+                                    <th>Tamanho</th>
+                                    <th>Data</th>
+                                    <th>Observação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backup in backups %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-database text-primary me-2"></i>
+                                        {{ backup.nome_arquivo }}
+                                    </td>
+                                    <td>{{ "%.2f"|format(backup.tamanho / 1024 / 1024) }} MB</td>
+                                    <td>{{ backup.data_backup.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if backup.observacao %}
+                                            <span class="text-muted">{{ backup.observacao }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('download_backup', backup_id=backup.id) }}" 
+                                               class="btn btn-info" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('excluir_backup', backup_id=backup.id) }}"
+                                                  onsubmit="return confirm('Excluir este backup?')"
+                                                  style="display: inline;">
+                                                <button type="submit" class="btn btn-danger" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum backup encontrado</h5>
+                        <p class="text-muted">Faça upload do seu primeiro backup</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Registrar dispositivo automaticamente
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('{{ url_for("registrar_dispositivo") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Status dispositivo:', data.status);
+            if (data.error && data.error.includes('Limite')) {
+                // Mostrar alerta se atingiu limite
+                showAlert('Limite de dispositivos atingido!', 'warning');
+            }
+        })
+        .catch(error => console.error('Erro:', error));
+        
+        // Atualizar a cada 5 minutos
+        setInterval(() => {
+            fetch('{{ url_for("registrar_dispositivo") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+        }, 300000);
+        
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alert.style.zIndex = '9999';
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

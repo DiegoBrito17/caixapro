@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Editar Suprimento{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4>Editar Suprimento #{{ suprimento.id }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Valor (R$)</label>
+                    <input type="text" class="form-control currency-input" name="valor" value="{{ suprimento.valor }}" required placeholder="0,00">
+                </div>
+                <div class="mb-3">
+                    <label>Motivo</label>
+                    <input type="text" class="form-control" name="motivo" value="{{ suprimento.motivo }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Observação</label>
+                    <textarea class="form-control" name="observacao">{{ suprimento.observacao }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-warning">Salvar</button>
+                <a href="{{ url_for('suprimentos') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

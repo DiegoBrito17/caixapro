@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: sistema-caixa
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "bash -c \"python migrate_sqlite_to_postgres.py && gunicorn app:app\""
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sistema-caixa-db
+          property: connectionString
+      - key: RUN_MIGRATION
+        value: "0"
+
+databases:
+  - name: sistema-caixa-db
+    plan: free

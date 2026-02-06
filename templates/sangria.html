@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Sangria - Sistema de Caixa{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Sangria / Retirada de Caixa</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            A sangria reduz o saldo do caixa. Use para retiradas de dinheiro, trocos, etc.
+        </div>
+        <form method="POST" action="{{ url_for('nova_sangria') }}">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Valor da Retirada (R$)</label>
+                    <input type="text" class="form-control currency-input" name="valor" required placeholder="0,00">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Motivo</label>
+                    <select class="form-select" name="motivo" required>
+                        <option value="">Selecione</option>
+                        <option value="TROCO">Troco</option>
+                        <option value="PASSAGEM">Passagem Motoboy</option>
+                        <option value="TAXA">Taxa de Serviço</option>
+                        <option value="DESPESAS">Despesas Imediatas</option>
+                        <option value="OUTROS">Outros</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Observação</label>
+                    <input type="text" class="form-control" name="observacao" placeholder="Detalhes adicionais">
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-warning btn-lg"><i class="fas fa-check-circle me-2"></i>Registrar Sangria</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Histórico de Sangrias do Dia</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Valor</th>
+                        <th>Motivo</th>
+                        <th>Observação</th>
+                                            {% if usuario_logado and usuario_logado.acesso_configuracoes %}
+                                            <th width="150">Ações</th>
+                                            {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sangria in sangrias %}
+                    <tr>
+                        <td>{{ sangria.data_hora.strftime('%H:%M') }}</td>
+                        <td><strong class="text-danger">{{ format_currency(sangria.valor) }}</strong></td>
+                        <td><span class="badge bg-warning text-dark">{{ sangria.motivo }}</span></td>
+                        <td>{{ sangria.observacao or '-' }}</td>
+                        {% if usuario_logado and usuario_logado.acesso_configuracoes %}
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn btn-info btn-sm" title="Detalhes" href="{{ url_for('admin_editar_sangria', sangria_id=sangria.id, view=1) }}">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a class="btn btn-warning btn-sm" title="Editar" href="{{ url_for('admin_editar_sangria', sangria_id=sangria.id) }}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin_deletar_sangria', sangria_id=sangria.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm confirm-action" title="Excluir" data-confirm="Tem certeza que deseja excluir esta sangria?">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">Nenhuma sangria registrada ainda</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

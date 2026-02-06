@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Relatórios{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-day fa-4x text-primary mb-3"></i>
+                <h5>Relatório Diário</h5>
+                <p>Consolidado de todos os turnos do dia</p>
+                <form method="POST" action="{{ url_for('relatorio_diario') }}">
+                    <input type="date" class="form-control mb-2" name="data" value="{{ now().strftime('%Y-%m-%d') }}" required>
+                    <button class="btn btn-primary w-100">Gerar Relatório</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-4x text-success mb-3"></i>
+                <h5>Relatório por Turno</h5>
+                <p>Selecione um caixa específico</p>
+                <a href="{{ url_for('admin_caixas') }}" class="btn btn-success w-100">Ver Caixas</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

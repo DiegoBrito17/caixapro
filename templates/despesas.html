@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Despesas - Sistema de Caixa{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Nova Despesa/Saída</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('nova_despesa') }}">
+            <div class="btn-group mb-3" role="group">
+                <input type="radio" class="btn-check" name="tipo" id="tipo_fixa" value="FIXA" checked>
+                <label class="btn btn-outline-primary" for="tipo_fixa">Despesa Fixa</label>
+                <input type="radio" class="btn-check" name="tipo" id="tipo_variavel" value="VARIAVEL">
+                <label class="btn btn-outline-primary" for="tipo_variavel">Despesa Variável</label>
+                <input type="radio" class="btn-check" name="tipo" id="tipo_saida" value="SAIDA">
+                <label class="btn btn-outline-primary" for="tipo_saida">Saída de Caixa</label>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" name="categoria_id" required>
+                        <option value="">Selecione</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}">{{ categoria.nome }} ({{ categoria.tipo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" name="descricao" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="text" class="form-control currency-input" name="valor" required placeholder="0,00">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Forma Pagamento</label>
+                    <select class="form-select" name="forma_pagamento_id">
+                        <option value="">Selecione</option>
+                        {% for forma in formas_pagamento %}
+                        <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Vencimento</label>
+                    <input type="date" class="form-control" name="data_vencimento">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Observação</label>
+                <textarea class="form-control" name="observacao" rows="2"></textarea>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-danger btn-lg"><i class="fas fa-check-circle me-2"></i>Registrar Despesa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Despesas do Dia</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Forma Pagamento</th>
+                        <th>Vencimento</th>
+                        <th>Data/Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for despesa in despesas %}
+                    <tr>
+                        <td>
+                            {% if despesa.tipo == 'FIXA' %}
+                            <span class="badge bg-primary">FIXA</span>
+                            {% elif despesa.tipo == 'VARIAVEL' %}
+                            <span class="badge bg-info">VARIÁVEL</span>
+                            {% else %}
+                            <span class="badge bg-danger">SAÍDA</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ despesa.categoria.nome if despesa.categoria else '-' }}</td>
+                        <td>{{ despesa.descricao }}</td>
+                        <td><strong class="text-danger">{{ format_currency(despesa.valor) }}</strong></td>
+                        <td>{{ despesa.forma_pagamento.nome if despesa.forma_pagamento else '-' }}</td>
+                        <td>{{ despesa.data_vencimento.strftime('%d/%m/%Y') if despesa.data_vencimento else '-' }}</td>
+                        <td><small>{{ despesa.data_hora.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">Nenhuma despesa registrada ainda</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

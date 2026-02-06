@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+{% block title %}Delivery - Sistema de Caixa{% endblock %}
+{% block page_title %}Delivery{% endblock %}
+{% block page_icon %}motorcycle{% endblock %}
+
+{% block header_buttons %}{% endblock %}
+
+{% block styles %}
+<style>
+    .delivery-kpis {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .stat-card.compact {
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        min-height: 96px;
+    }
+    .stat-card.compact .stat-card-header {
+        margin-bottom: 0.5rem;
+    }
+    .stat-card.compact .stat-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+    .stat-card.compact .stat-content h3 {
+        font-size: 1.3rem;
+        margin-bottom: 0.1rem;
+    }
+    .stat-card.compact .stat-content p {
+        font-size: 0.75rem;
+        letter-spacing: 0.2px;
+    }
+    .pay-cards .stat-card.compact {
+        padding: 0.7rem 0.85rem;
+        min-height: 78px;
+    }
+    .pay-cards .stat-card.compact .stat-content h3 {
+        font-size: 1.1rem;
+    }
+    .pay-cards .stat-card.compact .stat-content p {
+        font-size: 0.7rem;
+    }
+    .pay-cards .stat-card {
+        border-left: 4px solid transparent;
+    }
+    .pay-cards .dinheiro { border-left-color: #16a34a; }
+    .pay-cards .credito { border-left-color: #2563eb; }
+    .pay-cards .debito { border-left-color: #0ea5e9; }
+    .pay-cards .pix { border-left-color: #10b981; }
+    .pay-cards .online { border-left-color: #8b5cf6; }
+    .pay-cards .conta { border-left-color: #f59e0b; }
+    .delivery-table .table thead th {
+        background: linear-gradient(90deg, rgba(67, 97, 238, 0.08) 0%, rgba(114, 9, 183, 0.06) 100%);
+        border-bottom: 1px solid rgba(67, 97, 238, 0.15);
+    }
+    .delivery-table .table tbody tr {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .delivery-table .table tbody tr:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    }
+    .delivery-pill {
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .pill-moto {
+        background: rgba(72, 149, 239, 0.12);
+        color: #2563eb;
+    }
+    .pill-sem-moto {
+        background: rgba(100, 116, 139, 0.15);
+        color: #475569;
+    }
+    .pill-status {
+        background: rgba(34, 197, 94, 0.12);
+        color: #16a34a;
+    }
+    .delivery-top-tight {
+        margin-top: -6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid delivery-top-tight">
+    <!-- Resumo Delivery -->
+    <div class="stats-container delivery-kpis mb-3">
+        <div class="stat-card compact">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="fas fa-motorcycle"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais_delivery.total_delivery|default(0) }}</h3>
+                <p>Total Delivery</p>
+            </div>
+        </div>
+        <div class="stat-card compact info">
+            <div class="stat-card-header">
+                <div class="stat-icon info">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais_delivery.total_taxas|default(0) }}</h3>
+                <p>Total Taxas</p>
+            </div>
+        </div>
+        <div class="stat-card compact success">
+            <div class="stat-card-header">
+                <div class="stat-icon success">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3>{{ totais_delivery.quantidade_pedidos|default(0) }}</h3>
+                <p>Pedidos</p>
+            </div>
+        </div>
+        <div class="stat-card compact warning">
+            <div class="stat-card-header">
+                <div class="stat-icon warning">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">
+                    {% if totais_delivery.quantidade_pedidos > 0 %}
+                        {{ (totais_delivery.total_delivery / totais_delivery.quantidade_pedidos)|round(2) }}
+                    {% else %}0{% endif %}
+                </h3>
+                <p>Ticket Médio</p>
+            </div>
+        </div>
+        <div class="stat-card compact">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ totais_delivery.notas_fiscais|default(0) }}</h3>
+                <p>Notas Fiscais</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagamentos Delivery -->
+    <div class="main-card mb-3">
+        <div class="card-header bg-dark">
+            <h5 class="card-title">
+                <i class="fas fa-credit-card me-2"></i>Formas de Pagamento
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 pay-cards">
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 dinheiro">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.dinheiro|default(0) }}</h3>
+                            <p>Dinheiro</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 credito">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.credito|default(0) }}</h3>
+                            <p>Crédito</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 debito">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.debito|default(0) }}</h3>
+                            <p>Débito</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 pix">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.pix|default(0) }}</h3>
+                            <p>PIX</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 online">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.online|default(0) }}</h3>
+                            <p>Online</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-card compact p-3 conta">
+                        <div class="stat-content">
+                            <h3 class="currency-value">{{ totais_delivery.contas_assinadas|default(0) }}</h3>
+                            <p>Conta Assinada</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulário de Delivery -->
+        <div class="col-md-5">
+            <div class="main-card">
+                <div class="card-header bg-success">
+                    <h5 class="card-title">
+                        <i class="fas fa-motorcycle me-2"></i>Novo Delivery
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formDelivery" method="POST" action="{{ url_for('novo_delivery') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cliente *</label>
+                                <input type="text" class="form-control" name="cliente" required placeholder="Nome do cliente">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total (R$) *</label>
+                                <input type="text" class="form-control currency-input" name="total" min="0" required placeholder="0,00">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Taxa Entrega (R$)</label>
+                                <input type="text" class="form-control currency-input" name="taxa_entrega" min="0" value="0.00" placeholder="0,00">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Motoboy</label>
+                                <select class="form-select select2" name="motoboy_id">
+                                    <option value="">Selecione...</option>
+                                    {% for motoboy in motoboys %}
+                                    <option value="{{ motoboy.id }}">{{ motoboy.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Formas de Pagamento -->
+                        <div class="mb-3">
+                            <label class="form-label">Formas de Pagamento *</label>
+                            <div id="pagamentos-container-delivery">
+                                <div class="row mb-2 g-2">
+                                    <div class="col-md-5">
+                                        <select class="form-select" name="forma_pagamento_delivery[]" required>
+                                            <option value="">Selecione...</option>
+                                            {% for forma in formas_pagamento %}
+                                            <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control currency-input" name="valor_pagamento_delivery[]" min="0" placeholder="Valor" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-danger btn-sm w-100 remover-pagamento-delivery" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="adicionarPagamentoDelivery">
+                                <i class="fas fa-plus me-1"></i> Adicionar Pagamento
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Observação</label>
+                            <textarea class="form-control" name="observacao" rows="2" placeholder="Observações sobre o pedido..."></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="emitiu_nota" id="emitiu_nota">
+                            <label class="form-check-label" for="emitiu_nota">
+                                Emitiu Nota Fiscal
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i> Registrar Delivery
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de Deliveries -->
+        <div class="col-md-7">
+            <div class="main-card delivery-table">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>Últimos Deliveries
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Valor</th>
+                                    <th>Taxa</th>
+                                    <th>Motoboy</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for delivery in deliveries %}
+                                <tr>
+                                    <td>{{ delivery.data_hora.strftime('%H:%M') }}</td>
+                                    <td>{{ delivery.cliente[:20] }}{% if delivery.cliente|length > 20 %}...{% endif %}</td>
+                                    <td class="currency-value">{{ delivery.total }}</td>
+                                    <td class="currency-value">{{ delivery.taxa_entrega }}</td>
+                                    <td>
+                                        {% if delivery.motoboy %}
+                                        <span class="delivery-pill pill-moto">{{ delivery.motoboy.nome }}</span>
+                                        {% else %}
+                                        <span class="delivery-pill pill-sem-moto">Não definido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="delivery-pill pill-status">Concluído</span></td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a class="btn btn-info btn-sm" title="Detalhes" href="{{ url_for('admin_editar_delivery_detalhes', delivery_id=delivery.id, view=1) }}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if usuario_logado and usuario_logado.acesso_configuracoes %}
+                                            <a class="btn btn-warning btn-sm" title="Editar" href="{{ url_for('admin_editar_delivery_detalhes', delivery_id=delivery.id) }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('admin_deletar_delivery_completo', delivery_id=delivery.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm confirm-action" title="Excluir" data-confirm="Tem certeza que deseja excluir este delivery?">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Delivery -->
+<div class="modal fade" id="novoDeliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-motorcycle me-2"></i>Novo Delivery
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- O formulário está acima, mas pode colocar outro aqui se quiser -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Selecione...",
+            allowClear: true
+        });
+        
+        // Adicionar campo de pagamento para delivery
+        let paymentCountDelivery = 1;
+        
+        $('#adicionarPagamentoDelivery').click(function() {
+            paymentCountDelivery++;
+            const novoCampo = `
+                <div class="row mb-2 g-2" id="payment-row-${paymentCountDelivery}">
+                    <div class="col-md-5">
+                        <select class="form-select" name="forma_pagamento_delivery[]" required>
+                            <option value="">Selecione...</option>
+                            {% for forma in formas_pagamento %}
+                            <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control currency-input" name="valor_pagamento_delivery[]" min="0" placeholder="Valor" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-danger btn-sm w-100 remover-pagamento-delivery" data-row="${paymentCountDelivery}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#pagamentos-container-delivery').append(novoCampo);
+            
+            // Mostrar botão de remover no primeiro campo
+            $('.remover-pagamento-delivery').first().show();
+        });
+        
+        // Remover campo de pagamento
+        $(document).on('click', '.remover-pagamento-delivery', function() {
+            const rowId = $(this).data('row');
+            if (rowId) {
+                $(`#payment-row-${rowId}`).remove();
+            } else {
+                $(this).closest('.row').remove();
+            }
+            
+            // Se só sobrou um campo, esconder botão de remover
+            if ($('#pagamentos-container-delivery .row').length === 1) {
+                $('.remover-pagamento-delivery').first().hide();
+            }
+        });
+        
+        // Calcular total automático
+        $('input[name="total"]').on('blur', function() {
+            const total = parseFloat($(this).val()) || 0;
+            const taxa = parseFloat($('input[name="taxa_entrega"]').val()) || 0;
+            const totalComTaxa = total + taxa;
+            
+            // Se só tem um campo de pagamento, preencher automaticamente
+            if ($('#pagamentos-container-delivery .row').length === 1) {
+                $('input[name="valor_pagamento_delivery[]"]').first().val(totalComTaxa.toFixed(2));
+            }
+        });
+        
+        $('input[name="taxa_entrega"]').on('blur', function() {
+            const total = parseFloat($('input[name="total"]').val()) || 0;
+            const taxa = parseFloat($(this).val()) || 0;
+            const totalComTaxa = total + taxa;
+            
+            // Atualizar valor se só tem um pagamento
+            if ($('#pagamentos-container-delivery .row').length === 1) {
+                $('input[name="valor_pagamento_delivery[]"]').first().val(totalComTaxa.toFixed(2));
+            }
+        });
+        
+        // Validar formulário de delivery
+        $('#formDelivery').submit(function(e) {
+            const totalPedido = parseFloat($('input[name="total"]').val()) || 0;
+            const taxaEntrega = parseFloat($('input[name="taxa_entrega"]').val()) || 0;
+            const totalComTaxa = totalPedido + taxaEntrega;
+            
+            let totalPagamentos = 0;
+            $('input[name="valor_pagamento_delivery[]"]').each(function() {
+                totalPagamentos += parseFloat($(this).val()) || 0;
+            });
+            
+            if (Math.abs(totalPagamentos - totalComTaxa) > 0.01) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro de Validação',
+                    html: `A soma dos pagamentos (R$ ${totalPagamentos.toFixed(2)}) deve ser igual ao valor total do pedido (R$ ${totalComTaxa.toFixed(2)})!<br><br>
+                           <strong>Detalhes:</strong><br>
+                           • Valor do pedido: R$ ${totalPedido.toFixed(2)}<br>
+                           • Taxa de entrega: R$ ${taxaEntrega.toFixed(2)}<br>
+                           • <strong>Total a pagar: R$ ${totalComTaxa.toFixed(2)}</strong>`,
+                    confirmButtonText: 'Corrigir'
+                });
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // Inicializar tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+</script>
+
+<!-- SweetAlert2 para notificações mais bonitas -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Substituir confirm nativo por SweetAlert2
+    document.querySelectorAll('.confirm-action').forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (this.tagName === 'BUTTON' && this.type === 'submit') {
+                e.preventDefault();
+                const form = this.closest('form');
+                const message = this.getAttribute('data-confirm') || 'Tem certeza que deseja executar esta ação?';
+                
+                Swal.fire({
+                    title: 'Confirmar Ação',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, confirmar!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

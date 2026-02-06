@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Estoque - Sistema de Caixa{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-boxes"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Total Produtos</div>
+                <div class="stat-value">{{ total_produtos }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-success"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Valor em Estoque</div>
+                <div class="stat-value">{{ format_currency(total_valor) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Produtos Críticos</div>
+                <div class="stat-value">{{ criticos }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning"><i class="fas fa-box-open"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Baixo Estoque</div>
+                <div class="stat-value">{{ baixos }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mb-3">
+    <h4>Produtos</h4>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoProduto"><i class="fas fa-plus me-2"></i>Novo Produto</button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMovimentacao"><i class="fas fa-exchange-alt me-2"></i>Movimentação</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Estoque</th>
+                        <th>Custo</th>
+                        <th>Venda</th>
+                        <th>Margem</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr>
+                        <td><strong>{{ produto.codigo }}</strong></td>
+                        <td>{{ produto.nome }}</td>
+                        <td>{{ produto.categoria }}</td>
+                        <td>
+                            <strong>{{ produto.quantidade }} {{ produto.unidade }}</strong>
+                            {% if produto.quantidade <= produto.estoque_minimo * 0.3 %}
+                            <span class="badge bg-danger ms-2">CRÍTICO</span>
+                            {% elif produto.quantidade <= produto.estoque_minimo %}
+                            <span class="badge bg-warning">BAIXO</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ format_currency(produto.custo) }}</td>
+                        <td>{{ format_currency(produto.preco_venda) }}</td>
+                        <td>{{ "%.1f"|format(((produto.preco_venda - produto.custo) / produto.custo * 100) if produto.custo > 0 else 0) }}%</td>
+                        <td><strong>{{ format_currency(produto.quantidade * produto.custo) }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted">Nenhum produto cadastrado</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Produto -->
+<div class="modal fade" id="modalNovoProduto" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('novo_produto') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Produto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Código</label>
+                            <input type="text" class="form-control" name="codigo" placeholder="AUTO">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Nome *</label>
+                            <input type="text" class="form-control" name="nome" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-select" name="categoria">
+                                <option value="BEBIDAS">Bebidas</option>
+                                <option value="ALIMENTOS">Alimentos</option>
+                                <option value="LIMPEZA">Limpeza</option>
+                                <option value="OUTROS">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Custo (R$)</label>
+                            <input type="text" class="form-control currency-input" name="custo" value="0" placeholder="0,00">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Preço Venda (R$)</label>
+                            <input type="text" class="form-control currency-input" name="preco_venda" value="0" placeholder="0,00">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Quantidade Inicial</label>
+                            <input type="number" class="form-control" name="quantidade" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estoque Mínimo</label>
+                            <input type="number" class="form-control" name="estoque_minimo" value="10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estoque Máximo</label>
+                            <input type="number" class="form-control" name="estoque_maximo" value="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Movimentação -->
+<div class="modal fade" id="modalMovimentacao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('nova_movimentacao') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Movimentação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo *</label>
+                        <select class="form-select" name="tipo" required>
+                            <option value="ENTRADA">Entrada</option>
+                            <option value="SAIDA">Saída</option>
+                            <option value="AJUSTE">Ajuste</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Produto *</label>
+                        <select class="form-select" name="produto_id" required>
+                            <option value="">Selecione</option>
+                            {% for produto in produtos %}
+                            <option value="{{ produto.id }}">{{ produto.codigo }} - {{ produto.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Quantidade *</label>
+                            <input type="number" class="form-control" name="quantidade" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Valor Unitário</label>
+                            <input type="text" class="form-control currency-input" name="valor_unitario" value="0" placeholder="0,00">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo</label>
+                        <select class="form-select" name="motivo">
+                            <option value="COMPRA">Compra</option>
+                            <option value="VENDA">Venda</option>
+                            <option value="DEVOLUCAO">Devolução</option>
+                            <option value="PERDA">Perda</option>
+                            <option value="AJUSTE">Ajuste</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observação</label>
+                        <textarea class="form-control" name="observacao" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

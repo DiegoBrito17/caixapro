@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+{% block title %}Visualizar Caixa #{{ caixa.id }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background: {% if caixa.status == 'ABERTO' %}#28a745{% else %}#6c757d{% endif %}; color: white;">
+        <h5 class="mb-0">
+            <i class="fas fa-cash-register me-2"></i>
+            Caixa #{{ caixa.id }} - {{ caixa.data.strftime('%d/%m/%Y') }} - {{ caixa.turno }}
+            <span class="badge {% if caixa.status == 'ABERTO' %}bg-warning text-dark{% else %}bg-light text-dark{% endif %} ms-3">
+                {{ caixa.status }}
+            </span>
+        </h5>
+        <a href="{{ url_for('admin_caixas') }}" class="btn btn-light btn-sm">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- INFO GERAL -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <strong><i class="fas fa-user me-2"></i>Operador:</strong> {{ caixa.operador.nome }}
+            </div>
+            <div class="col-md-3">
+                <strong><i class="fas fa-clock me-2"></i>Abertura:</strong> {{ caixa.hora_abertura.strftime('%H:%M:%S') }}
+            </div>
+            <div class="col-md-3">
+                <strong><i class="fas fa-clock me-2"></i>Fechamento:</strong> 
+                {{ caixa.hora_fechamento.strftime('%H:%M:%S') if caixa.hora_fechamento else '-' }}
+            </div>
+            <div class="col-md-3">
+                <strong><i class="fas fa-money-bill-wave me-2"></i>Saldo Inicial:</strong> 
+                <span class="text-success">{{ format_currency(caixa.saldo_inicial) }}</span>
+            </div>
+        </div>
+
+        <!-- AÇÕES ADMIN -->
+        <div class="alert alert-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-user-shield me-2"></i>
+                    <strong>Ações Administrativas:</strong>
+                </div>
+                <div class="btn-group" role="group">
+                    {% if caixa.status == 'FECHADO' %}
+                    <form method="POST" action="{{ url_for('admin_reabrir_caixa', caixa_id=caixa.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('⚠️ Reabrir este caixa para edição?')">
+                            <i class="fas fa-lock-open me-2"></i>Reabrir Caixa
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('admin_fechar_caixa_forcado', caixa_id=caixa.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('⚠️ ATENÇÃO! Você está fechando um caixa que foi deixado aberto.\n\nEste fechamento será registrado como forçado pelo administrador.\n\nDeseja continuar?')">
+                            <i class="fas fa-lock me-2"></i>Fechar Caixa Forçado
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('admin_editar_caixa', caixa_id=caixa.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Editar Saldos
+                    </a>
+                    
+                    <!-- BOTÃO PDF COMPLETO -->
+                    <a href="{{ url_for('admin_gerar_pdf_caixa', caixa_id=caixa.id) }}" class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>PDF Completo
+                    </a>
+                    
+                    <!-- BOTÃO EXCEL (.xlsx) -->
+                    <a href="{{ url_for('exportar_excel_real', caixa_id=caixa.id) }}" class="btn btn-success">
+                        <i class="fas fa-file-excel me-2"></i>Excel (.xlsx)
+                    </a>
+                    
+                    <!-- BOTÃO DE EXCLUSÃO -->
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalExcluirCaixa">
+                        <i class="fas fa-trash me-2"></i>Excluir Caixa
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if caixa.status == 'ABERTO' %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>⚠️ CAIXA ABERTO:</strong> Este caixa foi deixado aberto e não foi finalizado corretamente. 
+            Use o botão "Fechar Caixa Forçado" acima para finalizá-lo manualmente.
+        </div>
+        {% endif %}
+
+        <!-- VENDAS -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-store me-2"></i>Vendas Mesa/Balcão ({{ caixa.vendas|length }})</h6>
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="imprimirTabela('tabelaVendas')" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-hover" id="tabelaVendas">
+                    <thead>
+                        <tr><th>Tipo</th><th>Nº</th><th>Total</th><th>Pagamentos</th><th>NF</th><th>Obs</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for venda in caixa.vendas %}
+                        <tr>
+                            <td><span class="badge bg-info">{{ venda.tipo }}</span></td>
+                            <td><strong>{{ venda.numero }}</strong></td>
+                            <td><strong>{{ format_currency(venda.total) }}</strong></td>
+                            <td>
+                                {% for pag in venda.pagamentos %}
+                                <small>{{ pag.forma_pagamento.nome }}: {{ format_currency(pag.valor) }}</small><br>
+                                {% endfor %}
+                            </td>
+                            <td>{% if venda.emitiu_nota %}<i class="fas fa-check text-success"></i>{% endif %}</td>
+                            <td><small>{{ venda.observacao or '-' }}</small></td>
+                            <td>
+                                <a href="{{ url_for('admin_editar_venda_detalhes', venda_id=venda.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin_deletar_venda', venda_id=venda.id) }}" style="display:inline;" onsubmit="return confirm('Deletar esta venda?')">
+                                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-success">
+                            <td colspan="2"><strong>TOTAL VENDAS LOJA</strong></td>
+                            <td colspan="5"><strong>{{ format_currency(totais.vendas_loja) }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DELIVERY -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-motorcycle me-2"></i>Pedidos Delivery ({{ caixa.deliveries|length }})</h6>
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="imprimirTabela('tabelaDelivery')" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-hover" id="tabelaDelivery">
+                    <thead>
+                        <tr><th>Cliente</th><th>Total</th><th>Taxa</th><th>Motoboy</th><th>Pagamento</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for delivery in caixa.deliveries %}
+                        <tr>
+                            <td>{{ delivery.cliente }}</td>
+                            <td>{{ format_currency(delivery.total) }}</td>
+                            <td>{{ format_currency(delivery.taxa_entrega) }}</td>
+                            <td>{{ delivery.motoboy.nome if delivery.motoboy else '-' }}</td>
+                            <td>
+                                {% for pag in delivery.pagamentos %}
+                                <small>{{ pag.forma_pagamento.nome }}: {{ format_currency(pag.valor) }}</small><br>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin_editar_delivery_detalhes', delivery_id=delivery.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin_deletar_delivery', delivery_id=delivery.id) }}" style="display:inline;" onsubmit="return confirm('Deletar este delivery?')">
+                                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-info">
+                            <td><strong>TOTAL DELIVERY</strong></td>
+                            <td colspan="5"><strong>{{ format_currency(totais.vendas_delivery) }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DESPESAS -->
+        <div class="card mb-3">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Despesas ({{ caixa.despesas|length }})</h6>
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="imprimirTabela('tabelaDespesas')" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-hover" id="tabelaDespesas">
+                    <thead>
+                        <tr><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for despesa in caixa.despesas %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ despesa.tipo }}</span></td>
+                            <td>{{ despesa.categoria.nome if despesa.categoria else '-' }}</td>
+                            <td>{{ despesa.descricao }}</td>
+                            <td class="text-danger"><strong>{{ format_currency(despesa.valor) }}</strong></td>
+                            <td>
+                                <a href="{{ url_for('admin_editar_despesa_detalhes', despesa_id=despesa.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin_deletar_despesa', despesa_id=despesa.id) }}" style="display:inline;" onsubmit="return confirm('Deletar esta despesa?')">
+                                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-danger">
+                            <td colspan="3"><strong>TOTAL DESPESAS</strong></td>
+                            <td colspan="2"><strong>{{ format_currency(totais.despesas) }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SANGRIAS -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Sangrias ({{ caixa.sangrias|length }})</h6>
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="imprimirTabela('tabelaSangrias')" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-hover" id="tabelaSangrias">
+                    <thead>
+                        <tr><th>Hora</th><th>Motivo</th><th>Valor</th><th>Observação</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for sangria in caixa.sangrias %}
+                        <tr>
+                            <td>{{ sangria.data_hora.strftime('%H:%M') }}</td>
+                            <td>{{ sangria.motivo }}</td>
+                            <td class="text-danger"><strong>{{ format_currency(sangria.valor) }}</strong></td>
+                            <td>{{ sangria.observacao or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-warning">
+                            <td colspan="2"><strong>TOTAL SANGRIAS</strong></td>
+                            <td colspan="2"><strong>{{ format_currency(totais.sangrias) }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RESUMO FINAL + BOTÕES DE EXPORTAÇÃO -->
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Resumo Financeiro</h5>
+                <div class="btn-group">
+                    <!-- EXPORTAR EXCEL (CSV) -->
+                    <a href="{{ url_for('exportar_excel_caixa', caixa_id=caixa.id) }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-csv me-1"></i> Exportar CSV
+                    </a>
+                    
+                    <!-- RELATÓRIO IMPRIMÍVEL -->
+                    <a href="{{ url_for('admin_gerar_relatorio', caixa_id=caixa.id) }}" class="btn btn-primary btn-sm" target="_blank">
+                        <i class="fas fa-print me-1"></i> Relatório Imprimível
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <table class="table table-lg">
+                            <tr>
+                                <td><strong>Saldo Inicial:</strong></td>
+                                <td class="text-end"><strong>{{ format_currency(caixa.saldo_inicial) }}</strong></td>
+                            </tr>
+                            <tr class="text-success">
+                                <td><strong>+ Total Vendas:</strong></td>
+                                <td class="text-end"><strong>{{ format_currency(totais.total_vendas) }}</strong></td>
+                            </tr>
+                            <tr class="text-danger">
+                                <td><strong>- Total Despesas:</strong></td>
+                                <td class="text-end"><strong>{{ format_currency(totais.despesas) }}</strong></td>
+                            </tr>
+                            <tr class="text-danger">
+                                <td><strong>- Total Sangrias:</strong></td>
+                                <td class="text-end"><strong>{{ format_currency(totais.sangrias) }}</strong></td>
+                            </tr>
+                            <tr class="table-success" style="font-size: 18px;">
+                                <td><strong>= SALDO FINAL:</strong></td>
+                                <td class="text-end"><strong style="color: #28a745;">{{ format_currency(totais.saldo_final) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="fas fa-download me-2"></i>Exportação Completa</h6>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('admin_gerar_pdf_caixa', caixa_id=caixa.id) }}" class="btn btn-danger" target="_blank">
+                                        <i class="fas fa-file-pdf me-2"></i> PDF Completo
+                                    </a>
+                                    <a href="{{ url_for('exportar_excel_real', caixa_id=caixa.id) }}" class="btn btn-success">
+                                        <i class="fas fa-file-excel me-2"></i> Excel (.xlsx)
+                                    </a>
+                                    <a href="{{ url_for('exportar_excel_caixa', caixa_id=caixa.id) }}" class="btn btn-info">
+                                        <i class="fas fa-file-csv me-2"></i> CSV Completo
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE EXCLUSÃO (adicionado no final) -->
+<div class="modal fade" id="modalExcluirCaixa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Excluir Caixa #{{ caixa.id }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+                
+                <h6 class="mb-3">Deseja realmente excluir o caixa #{{ caixa.id }}?</h6>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p class="mb-1">
+                            <strong>Data:</strong> {{ caixa.data.strftime('%d/%m/%Y') }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Turno:</strong> {{ caixa.turno }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Operador:</strong> {{ caixa.operador.nome }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Status:</strong> 
+                            <span class="badge {% if caixa.status == 'ABERTO' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ caixa.status }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-skull-crossbones me-2"></i>
+                    <strong>Perigo:</strong> Esta ação excluirá permanentemente:
+                    <ul class="mt-2 mb-0">
+                        <li>Todas as vendas deste caixa</li>
+                        <li>Todos os deliveries</li>
+                        <li>Todas as despesas</li>
+                        <li>Todas as sangrias</li>
+                        <li>Todos os suprimentos</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('admin_excluir_caixa_completo', caixa_id=caixa.id) }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Sim, Excluir Permanentemente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para imprimir tabelas individuais
+function imprimirTabela(idTabela) {
+    var conteudo = document.getElementById(idTabela).outerHTML;
+    var janela = window.open('', '_blank', 'width=800,height=600');
+    janela.document.write('<html><head><title>Impressão</title>');
+    janela.document.write('<style>');
+    janela.document.write('body { font-family: Arial, sans-serif; }');
+    janela.document.write('table { width: 100%; border-collapse: collapse; }');
+    janela.document.write('th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }');
+    janela.document.write('th { background-color: #f2f2f2; }');
+    janela.document.write('tr:nth-child(even) { background-color: #f9f9f9; }');
+    janela.document.write('</style>');
+    janela.document.write('</head><body>');
+    janela.document.write('<h2>Caixa #{{ caixa.id }} - {{ caixa.data.strftime("%d/%m/%Y") }} - {{ caixa.turno }}</h2>');
+    janela.document.write('<p><strong>Operador:</strong> {{ caixa.operador.nome }}</p>');
+    janela.document.write(conteudo);
+    janela.document.write('</body></html>');
+    janela.document.close();
+    janela.print();
+}
+
+// Função para imprimir apenas o resumo financeiro
+function imprimirResumo() {
+    var janela = window.open('', '_blank', 'width=800,height=600');
+    janela.document.write('<html><head><title>Resumo Financeiro - Caixa #{{ caixa.id }}</title>');
+    janela.document.write('<style>');
+    janela.document.write('body { font-family: Arial, sans-serif; padding: 20px; }');
+    janela.document.write('h2 { color: #333; }');
+    janela.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
+    janela.document.write('td { padding: 10px; border-bottom: 1px solid #ddd; }');
+    janela.document.write('.total { font-weight: bold; font-size: 1.2em; }');
+    janela.document.write('.receita { color: green; }');
+    janela.document.write('.despesa { color: red; }');
+    janela.document.write('</style>');
+    janela.document.write('</head><body>');
+    janela.document.write('<h2>Resumo Financeiro</h2>');
+    janela.document.write('<p><strong>Caixa #{{ caixa.id }}</strong></p>');
+    janela.document.write('<p><strong>Data:</strong> {{ caixa.data.strftime("%d/%m/%Y") }}</p>');
+    janela.document.write('<p><strong>Turno:</strong> {{ caixa.turno }}</p>');
+    janela.document.write('<p><strong>Operador:</strong> {{ caixa.operador.nome }}</p>');
+    janela.document.write('<hr>');
+    janela.document.write('<table>');
+    janela.document.write('<tr><td>Saldo Inicial:</td><td class="receita">{{ format_currency(caixa.saldo_inicial) }}</td></tr>');
+    janela.document.write('<tr><td>+ Total Vendas:</td><td class="receita">{{ format_currency(totais.total_vendas) }}</td></tr>');
+    janela.document.write('<tr><td>- Total Despesas:</td><td class="despesa">{{ format_currency(totais.despesas) }}</td></tr>');
+    janela.document.write('<tr><td>- Total Sangrias:</td><td class="despesa">{{ format_currency(totais.sangrias) }}</td></tr>');
+    janela.document.write('<tr class="total"><td>= SALDO FINAL:</td><td style="color: #28a745;">{{ format_currency(totais.saldo_final) }}</td></tr>');
+    janela.document.write('</table>');
+    janela.document.write('<hr>');
+    janela.document.write('<p style="font-size: 0.9em; color: #666;">Impresso em: ' + new Date().toLocaleString() + '</p>');
+    janela.document.write('</body></html>');
+    janela.document.close();
+    janela.print();
+}
+
+// Função para imprimir toda a página
+function imprimirPaginaCompleta() {
+    window.print();
+}
+</script>
+
+<style>
+@media print {
+    .card-header, .alert, .btn-group, .modal, .btn {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+}
+
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+</style>
+{% endblock %}

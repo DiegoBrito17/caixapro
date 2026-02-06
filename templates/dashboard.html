@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Caixa{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_icon %}chart-bar{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-filter .card-header {
+        padding: 0.85rem 1.25rem;
+    }
+    .dashboard-filter .card-body {
+        padding: 0.85rem 1.25rem;
+    }
+    .dashboard-filter .form-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.35rem;
+    }
+    .dashboard-filter .form-select,
+    .dashboard-filter .form-control {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    .dashboard-filter .btn {
+        padding: 0.55rem 0.9rem;
+        font-size: 0.85rem;
+    }
+    .dashboard-kpis {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .stat-card.compact {
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        min-height: 96px;
+    }
+    .stat-card.compact .stat-card-header {
+        margin-bottom: 0.5rem;
+    }
+    .stat-card.compact .stat-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+    .stat-card.compact .stat-content h3 {
+        font-size: 1.3rem;
+        margin-bottom: 0.1rem;
+    }
+    .stat-card.compact .stat-content p {
+        font-size: 0.75rem;
+        letter-spacing: 0.2px;
+    }
+    .chart-card .card-body {
+        padding: 0.9rem 1rem;
+    }
+    .chart-box {
+        height: 220px;
+    }
+    .chart-box-lg {
+        height: 280px;
+    }
+    .dashboard-table .table thead th {
+        background: linear-gradient(90deg, rgba(67, 97, 238, 0.08) 0%, rgba(114, 9, 183, 0.06) 100%);
+        border-bottom: 1px solid rgba(67, 97, 238, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Filtros -->
+    <div class="main-card mb-3 dashboard-filter">
+        <div class="card-header bg-info">
+            <h5 class="card-title">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('dashboard') }}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Período</label>
+                    <select class="form-select" name="periodo" id="periodo">
+                        <option value="today" {% if periodo == 'today' %}selected{% endif %}>Hoje</option>
+                        <option value="week" {% if periodo == 'week' %}selected{% endif %}>Últimos 7 dias</option>
+                        <option value="month" {% if periodo == 'month' %}selected{% endif %}>Este mês</option>
+                        <option value="custom" {% if periodo == 'custom' %}selected{% endif %}>Personalizado</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="dataInicioGroup" style="{% if periodo != 'custom' %}display: none;{% endif %}">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" class="form-control" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-3" id="dataFimGroup" style="{% if periodo != 'custom' %}display: none;{% endif %}">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Turno</label>
+                    <select class="form-select" name="turno">
+                        <option value="all" {% if turno == 'all' %}selected{% endif %}>Todos</option>
+                        <option value="MANHÃ" {% if turno == 'MANHÃ' %}selected{% endif %}>Manhã</option>
+                        <option value="TARDE" {% if turno == 'TARDE' %}selected{% endif %}>Tarde</option>
+                        <option value="NOITE" {% if turno == 'NOITE' %}selected{% endif %}>Noite</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- KPIs -->
+    <div class="stats-container dashboard-kpis mb-3">
+        <div class="stat-card compact">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-trend {% if metricas.total_receitas > 0 %}positive{% else %}negative{% endif %}">
+                    <i class="fas fa-arrow-{% if metricas.total_receitas > 0 %}up{% else %}down{% endif %}"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ metricas.total_receitas|default(0) }}</h3>
+                <p>Total Receitas</p>
+            </div>
+        </div>
+        
+        <div class="stat-card compact success">
+            <div class="stat-card-header">
+                <div class="stat-icon success">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-trend {% if metricas.saldo_liquido > 0 %}positive{% else %}negative{% endif %}">
+                    <i class="fas fa-arrow-{% if metricas.saldo_liquido > 0 %}up{% else %}down{% endif %}"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3 class="currency-value">{{ metricas.saldo_liquido|default(0) }}</h3>
+                <p>Lucro Líquido</p>
+            </div>
+        </div>
+        
+        <div class="stat-card compact warning">
+            <div class="stat-card-header">
+                <div class="stat-icon warning">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-trend positive">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3>{{ metricas.total_transacoes|default(0) }}</h3>
+                <p>Total Transações</p>
+            </div>
+        </div>
+        
+        <div class="stat-card compact info">
+            <div class="stat-card-header">
+                <div class="stat-icon info">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-equals"></i>
+                </div>
+            </div>
+            <div class="stat-content">
+                <h3>{{ format_currency(metricas.ticket_medio|default(0)) }}</h3>
+                <p>Ticket Médio</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos (3 por linha) -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Formas de Pagamento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartPagamentos"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header bg-success">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Vendas por Turno
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartTurno"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header bg-warning">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-receipt me-2"></i>Despesas por Categoria
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartDespesas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3 mb-3">
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header bg-info">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-motorcycle me-2"></i>Taxas por Motoboy
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartMotoboy"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Tipos de Venda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartTiposVenda"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="main-card h-100 chart-card">
+                <div class="card-header bg-danger">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Receitas x Despesas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-box">
+                        <canvas id="chartLinha"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Últimos Caixas -->
+    <div class="main-card dashboard-table">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-history me-2"></i>Últimos Caixas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Turno</th>
+                            <th>Operador</th>
+                            <th>Saldo Inicial</th>
+                            <th>Total Vendas</th>
+                            <th>Total Despesas</th>
+                            <th>Saldo Final</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caixa in caixas %}
+                        <tr>
+                            <td>{{ caixa.data.strftime('%d/%m/%Y') }}</td>
+                            <td><span class="badge bg-primary">{{ caixa.turno }}</span></td>
+                            <td>{{ caixa.operador.nome }}</td>
+                            <td class="currency-value">{{ caixa.saldo_inicial|default(0) }}</td>
+                            <td>
+                                {% set totais = calcular_totais_caixa(caixa) %}
+                                <span class="currency-value">{{ totais.total_vendas|default(0) }}</span>
+                            </td>
+                            <td class="currency-value">{{ totais.despesas|default(0) }}</td>
+                            <td>
+                                {% if caixa.saldo_final %}
+                                    <span class="currency-value">{{ caixa.saldo_final|default(0) }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if caixa.status == 'ABERTO' %}
+                                    <span class="badge bg-success">Aberto</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Fechado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{{ url_for('admin_visualizar_caixa', caixa_id=caixa.id) }}" class="btn btn-info btn-sm" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if usuario_logado and usuario_logado.acesso_configuracoes %}
+                                    <a href="{{ url_for('exportar_excel_caixa', caixa_id=caixa.id) }}" class="btn btn-success btn-sm" title="Exportar Excel">
+                                        <i class="fas fa-file-excel"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Controle do filtro de período
+        $('#periodo').change(function() {
+            if ($(this).val() === 'custom') {
+                $('#dataInicioGroup').show();
+                $('#dataFimGroup').show();
+            } else {
+                $('#dataInicioGroup').hide();
+                $('#dataFimGroup').hide();
+            }
+        });
+        
+        const pagamentosLabels = {{ metricas.formas_pagamento.keys()|list|tojson }};
+        const pagamentosValues = {{ metricas.formas_pagamento.values()|list|tojson }};
+        const despesasLabels = {{ metricas.despesas_categoria.keys()|list|tojson }};
+        const despesasValues = {{ metricas.despesas_categoria.values()|list|tojson }};
+        const motoboysData = {{ metricas_avancadas.motoboys_taxas|tojson }};
+        
+        const vendasTurno = {{ metricas_avancadas.vendas_por_turno|tojson }};
+        const labelsTurno = Object.keys(vendasTurno);
+        const valuesTurno = Object.values(vendasTurno);
+        
+        // Formas de pagamento
+        new Chart(document.getElementById('chartPagamentos'), {
+            type: 'doughnut',
+            data: {
+                labels: pagamentosLabels,
+                datasets: [{
+                    data: pagamentosValues,
+                    backgroundColor: ['#16a34a', '#2563eb', '#0ea5e9', '#10b981', '#8b5cf6', '#f59e0b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+        
+        // Vendas por turno
+        new Chart(document.getElementById('chartTurno'), {
+            type: 'bar',
+            data: {
+                labels: labelsTurno,
+                datasets: [{
+                    data: valuesTurno,
+                    backgroundColor: ['#4361ee', '#4cc9f0', '#f72585']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        
+        // Despesas por categoria
+        new Chart(document.getElementById('chartDespesas'), {
+            type: 'pie',
+            data: {
+                labels: despesasLabels,
+                datasets: [{
+                    data: despesasValues,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+        
+        // Motoboys
+        new Chart(document.getElementById('chartMotoboy'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(motoboysData),
+                datasets: [{
+                    data: Object.keys(motoboysData).map(m => motoboysData[m].total),
+                    backgroundColor: '#20c997'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        
+        // Tipos de venda
+        new Chart(document.getElementById('chartTiposVenda'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Mesa', 'Balcão', 'Delivery'],
+                datasets: [{
+                    data: [
+                        {{ metricas.tipos_venda.MESA|default(0) }},
+                        {{ metricas.tipos_venda.BALCAO|default(0) }},
+                        {{ metricas.tipos_venda.DELIVERY|default(0) }}
+                    ],
+                    backgroundColor: ['#4361ee', '#4cc9f0', '#f72585']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+        
+        // Linha do tempo (Receitas x Despesas)
+        const vendasPorDia = {{ metricas_avancadas.vendas_por_dia|default({})|tojson }};
+        const despesasPorDia = {{ metricas_avancadas.despesas_por_dia|default({})|tojson }};
+        const dias = Array.from(new Set([...Object.keys(vendasPorDia), ...Object.keys(despesasPorDia)])).sort((a, b) => {
+            const [da, ma] = a.split('/').map(Number);
+            const [db, mb] = b.split('/').map(Number);
+            return ma === mb ? da - db : ma - mb;
+        });
+        const receitasSerie = dias.map(d => vendasPorDia[d] || 0);
+        const despesasSerie = dias.map(d => despesasPorDia[d] || 0);
+        
+        new Chart(document.getElementById('chartLinha'), {
+            type: 'line',
+            data: {
+                labels: dias,
+                datasets: [
+                    { label: 'Receitas', data: receitasSerie, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.15)', fill: true, tension: 0.3 },
+                    { label: 'Despesas', data: despesasSerie, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.15)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+        
+        // Atualizar dashboard a cada 60 segundos
+        let autoRefresh = setInterval(function() {
+            $.ajax({
+                url: '{{ url_for("dashboard") }}',
+                data: {
+                    periodo: $('#periodo').val(),
+                    data_inicio: $('input[name="data_inicio"]').val(),
+                    data_fim: $('input[name="data_fim"]').val(),
+                    turno: $('select[name="turno"]').val()
+                },
+                success: function() {
+                    location.reload();
+                },
+                error: function() {
+                    console.log('Erro ao atualizar dashboard');
+                }
+            });
+        }, 60000);
+        
+        $(window).on('beforeunload', function() {
+            clearInterval(autoRefresh);
+        });
+    });
+</script>
+{% endblock %}

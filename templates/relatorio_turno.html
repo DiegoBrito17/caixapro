@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Relatório Turno - {{ caixa.turno }} - {{ caixa.data.strftime('%d/%m/%Y') }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between">
+        <h5 class="mb-0">Relatório - {{ caixa.turno }} - {{ caixa.data.strftime('%d/%m/%Y') }}</h5>
+        <div>
+            <a href="{{ url_for('admin_gerar_pdf_caixa', caixa_id=caixa.id) }}" class="btn btn-light btn-sm" target="_blank">
+                <i class="fas fa-file-pdf me-2"></i>Gerar PDF
+            </a>
+            <a href="{{ url_for('relatorios') }}" class="btn btn-light btn-sm">Voltar</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <iframe src="{{ url_for('admin_gerar_pdf_caixa', caixa_id=caixa.id) }}" width="100%" height="800px" style="border: none;"></iframe>
+    </div>
+</div>
+{% endblock %}

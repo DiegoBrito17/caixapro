@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Editar Sangria{% endblock %}
+
+{% block content %}
+{% set view_only = request.args.get('view') %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4>{% if view_only %}Detalhes da Sangria{% else %}Editar Sangria{% endif %} #{{ sangria.id }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Valor (R$)</label>
+                    <input type="text" class="form-control currency-input" name="valor" value="{{ sangria.valor }}" required {% if view_only %}disabled{% endif %} placeholder="0,00">
+                </div>
+                <div class="mb-3">
+                    <label>Motivo</label>
+                    <input type="text" class="form-control" name="motivo" value="{{ sangria.motivo }}" required {% if view_only %}disabled{% endif %}>
+                </div>
+                <div class="mb-3">
+                    <label>Observação</label>
+                    <textarea class="form-control" name="observacao" {% if view_only %}disabled{% endif %}>{{ sangria.observacao }}</textarea>
+                </div>
+                {% if not view_only %}<button type="submit" class="btn btn-warning">Salvar</button>{% endif %}
+                <a href="{{ url_for('sangria') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Editar Despesa #{{ despesa.id }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Despesa #{{ despesa.id }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" name="tipo" required>
+                        <option value="FIXA" {% if despesa.tipo == 'FIXA' %}selected{% endif %}>Fixa</option>
+                        <option value="VARIAVEL" {% if despesa.tipo == 'VARIAVEL' %}selected{% endif %}>Variável</option>
+                        <option value="SAIDA" {% if despesa.tipo == 'SAIDA' %}selected{% endif %}>Saída</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" name="categoria_id">
+                        <option value="">Sem categoria</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if despesa.categoria_id == cat.id %}selected{% endif %}>{{ cat.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="text" class="form-control currency-input" name="valor" value="{{ despesa.valor }}" required placeholder="0,00">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" name="descricao" value="{{ despesa.descricao }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select class="form-select" name="forma_pagamento_id">
+                        <option value="">Selecione...</option>
+                        {% for forma in formas_pagamento %}
+                        <option value="{{ forma.id }}" {% if despesa.forma_pagamento_id == forma.id %}selected{% endif %}>{{ forma.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+                <a href="{{ url_for('admin_visualizar_caixa', caixa_id=despesa.caixa_id) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Fechar Caixa - Sistema de Caixa{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-lock me-2"></i>Fechamento de Caixa - Conferência</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Atenção!</strong> Ao confirmar o fechamento, o caixa será encerrado e você será redirecionado para a tela de login.
+        </div>
+
+        <!-- INFORMAÇÕES DO TURNO -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>Informações do Turno</strong></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3"><strong>Data:</strong> {{ caixa.data.strftime('%d/%m/%Y') }}</div>
+                    <div class="col-md-3"><strong>Turno:</strong> {{ caixa.turno }}</div>
+                    <div class="col-md-3"><strong>Operador:</strong> {{ caixa.operador.nome }}</div>
+                    <div class="col-md-3"><strong>Saldo Inicial:</strong> {{ format_currency(caixa.saldo_inicial) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENTRADAS -->
+        <div class="card mb-3 border-success">
+            <div class="card-header bg-success text-white"><strong>💰 Entradas (Vendas)</strong></div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><td>Vendas Mesas/Balcão</td><td class="text-end"><strong>{{ format_currency(totais.vendas_loja) }}</strong></td></tr>
+                    <tr><td>Vendas Delivery</td><td class="text-end"><strong>{{ format_currency(totais.vendas_delivery) }}</strong></td></tr>
+                    <tr class="table-success"><td><strong>Total Vendas</strong></td><td class="text-end"><strong>{{ format_currency(totais.total_vendas) }}</strong></td></tr>
+                </table>
+                
+                <h6 class="mt-3">Formas de Pagamento</h6>
+                <table class="table table-sm">
+                    <tr><td>Dinheiro</td><td class="text-end">{{ format_currency(totais.dinheiro) }}</td></tr>
+                    <tr><td>Crédito</td><td class="text-end">{{ format_currency(totais.credito) }}</td></tr>
+                    <tr><td>Débito</td><td class="text-end">{{ format_currency(totais.debito) }}</td></tr>
+                    <tr><td>PIX</td><td class="text-end">{{ format_currency(totais.pix) }}</td></tr>
+                    <tr><td>PG Online</td><td class="text-end">{{ format_currency(totais.online) }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- SAÍDAS -->
+        <div class="card mb-3 border-danger">
+            <div class="card-header bg-danger text-white"><strong>📉 Saídas (Despesas)</strong></div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><td>Despesas Fixas</td><td class="text-end">{{ format_currency(totais.despesas_fixas if totais.despesas_fixas else 0) }}</td></tr>
+                    <tr><td>Despesas Variáveis</td><td class="text-end">{{ format_currency(totais.despesas_variaveis if totais.despesas_variaveis else 0) }}</td></tr>
+                    <tr><td>Saídas de Caixa</td><td class="text-end">{{ format_currency(totais.despesas_saidas if totais.despesas_saidas else 0) }}</td></tr>
+                    <tr><td>Sangrias/Retiradas</td><td class="text-end">{{ format_currency(totais.sangrias) }}</td></tr>
+                    <tr class="table-danger"><td><strong>Total Saídas</strong></td><td class="text-end"><strong>{{ format_currency(totais.despesas + totais.sangrias) }}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- NOTAS FISCAIS -->
+        <div class="card mb-3 border-info">
+            <div class="card-header bg-info text-white"><strong>🧾 Notas Fiscais</strong></div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><td>Valor Total Notas Fiscais</td><td class="text-end"><strong>{{ format_currency(totais.notas_fiscais) }}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- RESUMO FINAL -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white"><strong>📊 Resumo Final</strong></div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><td>Saldo Inicial</td><td class="text-end">{{ format_currency(caixa.saldo_inicial) }}</td></tr>
+                    <tr class="text-success"><td>+ Total Entradas</td><td class="text-end">{{ format_currency(totais.total_vendas) }}</td></tr>
+                    <tr class="text-danger"><td>- Total Saídas</td><td class="text-end">{{ format_currency(totais.despesas + totais.sangrias) }}</td></tr>
+                    <tr class="table-primary"><td><strong style="font-size: 18px;">Saldo Final do Caixa</strong></td><td class="text-end"><strong style="font-size: 20px; color: #28a745;">{{ format_currency(totais.saldo_final) }}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- CONFIRMAÇÃO -->
+        <form method="POST" action="{{ url_for('confirmar_fechamento') }}" onsubmit="return confirm('Tem certeza que deseja fechar o caixa? Esta ação não pode ser desfeita!');">
+            <div class="d-flex gap-3 justify-content-end">
+                <a href="{{ url_for('vendas') }}" class="btn btn-secondary btn-lg">Cancelar</a>
+                <a href="{{ url_for('exportar_excel_caixa', caixa_id=caixa.id) }}" class="btn btn-success btn-lg w-100 mb-3" target="_blank">
+                                    <i class="fas fa-file-excel me-2"></i>EXPORTAR PARA EXCEL
+                                </a>
+                                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-lock me-2"></i>Confirmar Fechamento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

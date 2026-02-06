@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+{% block title %}Configurações - Sistema de Caixa
+    {% for usuario in usuarios %}
+    <div class="modal fade" id="modalSenha{{ usuario.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Alterar Senha - {{ usuario.nome }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin_editar_senha_usuario', usuario_id=usuario.id) }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" name="nova_senha" minlength="3" required>
+                            <small class="text-muted">Mínimo 3 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+{% block content %}
+
+<!-- USUÁRIOS -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Usuários / Operadores</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('novo_usuario') }}" class="mb-4">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Nome do Operador</label>
+                    <input type="text" class="form-control" name="nome" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Senha</label>
+                    <input type="password" class="form-control" name="senha" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Perfil</label>
+                    <select class="form-select" name="perfil">
+                        <option value="OPERADOR">Operador</option>
+                        <option value="ADMIN">Administrador</option>
+                        <option value="MASTER">Admin Master</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="acesso_dashboard" id="dash" checked>
+                        <label class="form-check-label" for="dash">Dashboard</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="acesso_configuracoes" id="config">
+                        <label class="form-check-label" for="config">Config</label>
+                    </div>
+                </div>
+                <!-- NOVO CHECKBOX: RELATÓRIOS -->
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="acesso_relatorios" id="relatorios">
+                        <label class="form-check-label" for="relatorios">Relatórios</label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Adicionar Usuário</button>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Perfil</th>
+                        <th>Dashboard</th>
+                        <th>Config</th>
+                        <th>Relatórios</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>{{ usuario.nome }}</td>
+                        <td>
+                            <span class="badge {% if usuario.perfil == 'MASTER' %}bg-dark{% elif usuario.perfil == 'ADMIN' %}bg-danger{% else %}bg-info{% endif %}">
+                                {{ usuario.perfil }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if usuario.acesso_dashboard %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.acesso_configuracoes %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.acesso_relatorios %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% if usuario.perfil != 'MASTER' %}
+                                <!-- Botão Editar Permissões -->
+                                <button type="button" class="btn btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editarUsuarioModal{{ usuario.id }}"
+                                        title="Editar Permissões">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Botão Alterar Senha -->
+                                <button type="button" class="btn btn-info" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#alterarSenhaModal{{ usuario.id }}"
+                                        title="Alterar Senha">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                
+                                <!-- Botão Ativar/Desativar -->
+                                <form method="POST" action="{{ url_for('admin_toggle_usuario', usuario_id=usuario.id) }}" 
+                                      class="d-inline" 
+                                      onsubmit="return confirm('Tem certeza que deseja alterar o status deste usuário?')">
+                                    {% if usuario.ativo %}
+                                        <button type="submit" class="btn btn-secondary" title="Desativar Usuário">
+                                            <i class="fas fa-user-slash"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-success" title="Ativar Usuário">
+                                            <i class="fas fa-user-check"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botão Excluir (somente para não-admins) -->
+                                {% if usuario.perfil not in ['ADMIN', 'MASTER'] %}
+                                <form method="POST" action="{{ url_for('admin_deletar_usuario', usuario_id=usuario.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('ATENÇÃO: Esta ação é irreversível! Tem certeza que deseja excluir este usuário?')">
+                                    <button type="submit" class="btn btn-danger" title="Excluir Usuário">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted small">Protegido</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal para Editar Permissões -->
+                    {% if usuario.perfil != 'MASTER' %}
+                    <div class="modal fade" id="editarUsuarioModal{{ usuario.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">Editar Permissões - {{ usuario.nome }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_usuario', usuario_id=usuario.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Perfil</label>
+                                            <select class="form-select" name="perfil" required>
+                                                <option value="OPERADOR" {% if usuario.perfil == 'OPERADOR' %}selected{% endif %}>Operador</option>
+                                                <option value="ADMIN" {% if usuario.perfil == 'ADMIN' %}selected{% endif %}>Administrador</option>
+                                                <option value="MASTER" {% if usuario.perfil == 'MASTER' %}selected{% endif %}>Admin Master</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="acesso_dashboard" id="dashboard{{ usuario.id }}"
+                                                       {% if usuario.acesso_dashboard %}checked{% endif %}>
+                                                <label class="form-check-label" for="dashboard{{ usuario.id }}">
+                                                    Acesso ao Dashboard
+                                                </label>
+                                            </div>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="acesso_configuracoes" id="config{{ usuario.id }}"
+                                                       {% if usuario.acesso_configuracoes %}checked{% endif %}>
+                                                <label class="form-check-label" for="config{{ usuario.id }}">
+                                                    Acesso às Configurações
+                                                </label>
+                                            </div>
+                                            <!-- NOVO CHECKBOX: RELATÓRIOS -->
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="acesso_relatorios" id="relatorios{{ usuario.id }}"
+                                                       {% if usuario.acesso_relatorios %}checked{% endif %}>
+                                                <label class="form-check-label" for="relatorios{{ usuario.id }}">
+                                                    Acesso a Relatórios
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal para Alterar Senha -->
+                    <div class="modal fade" id="alterarSenhaModal{{ usuario.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-info text-white">
+                                    <h5 class="modal-title">Alterar Senha - {{ usuario.nome }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_senha_usuario', usuario_id=usuario.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nova Senha</label>
+                                            <input type="password" class="form-control" name="nova_senha" 
+                                                   minlength="3" required placeholder="Mínimo 3 caracteres">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Confirmar Nova Senha</label>
+                                            <input type="password" class="form-control" name="confirmar_senha" 
+                                                   minlength="3" required>
+                                        </div>
+                                        <div class="alert alert-info">
+                                            <small><i class="fas fa-info-circle"></i> A senha será alterada imediatamente após a confirmação.</small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-info text-white">Alterar Senha</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- FORMAS DE PAGAMENTO -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Formas de Pagamento</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('nova_forma_pagamento') }}" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" name="nome" placeholder="Nome da forma de pagamento" required>
+                <button class="btn btn-success" type="submit">Adicionar</button>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for forma in formas_pagamento %}
+                    <tr>
+                        <td>{{ forma.nome }}</td>
+                        <td>
+                            {% if forma.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botão Editar -->
+                                <button type="button" class="btn btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editarFormaModal{{ forma.id }}"
+                                        title="Editar Forma de Pagamento">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Botão Ativar/Desativar -->
+                                <form method="POST" action="{{ url_for('admin_toggle_forma_pagamento', forma_id=forma.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja alterar o status desta forma de pagamento?')">
+                                    {% if forma.ativo %}
+                                        <button type="submit" class="btn btn-secondary" title="Desativar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-success" title="Ativar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botão Excluir -->
+                                <form method="POST" action="{{ url_for('admin_deletar_forma_pagamento', forma_id=forma.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta forma de pagamento?')">
+                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal para Editar Forma de Pagamento -->
+                    <div class="modal fade" id="editarFormaModal{{ forma.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">Editar Forma de Pagamento</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_forma_pagamento', forma_id=forma.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome</label>
+                                            <input type="text" class="form-control" name="nome" value="{{ forma.nome }}" required>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="ativo" id="ativo{{ forma.id }}"
+                                                   {% if forma.ativo %}checked{% endif %}>
+                                            <label class="form-check-label" for="ativo{{ forma.id }}">
+                                                Ativo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-warning">Salvar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- BANDEIRAS -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Bandeiras de Cartão</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('nova_bandeira') }}" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" name="nome" placeholder="Nome da bandeira" required>
+                <button class="btn btn-info text-white" type="submit">Adicionar</button>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bandeira in bandeiras %}
+                    <tr>
+                        <td>{{ bandeira.nome }}</td>
+                        <td>
+                            {% if bandeira.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botão Editar -->
+                                <button type="button" class="btn btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editarBandeiraModal{{ bandeira.id }}"
+                                        title="Editar Bandeira">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Botão Ativar/Desativar -->
+                                <form method="POST" action="{{ url_for('admin_toggle_bandeira', bandeira_id=bandeira.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja alterar o status desta bandeira?')">
+                                    {% if bandeira.ativo %}
+                                        <button type="submit" class="btn btn-secondary" title="Desativar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-success" title="Ativar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botão Excluir -->
+                                <form method="POST" action="{{ url_for('admin_deletar_bandeira', bandeira_id=bandeira.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta bandeira?')">
+                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal para Editar Bandeira -->
+                    <div class="modal fade" id="editarBandeiraModal{{ bandeira.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">Editar Bandeira</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_bandeira', bandeira_id=bandeira.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome</label>
+                                            <input type="text" class="form-control" name="nome" value="{{ bandeira.nome }}" required>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="ativo" id="ativoBandeira{{ bandeira.id }}"
+                                                   {% if bandeira.ativo %}checked{% endif %}>
+                                            <label class="form-check-label" for="ativoBandeira{{ bandeira.id }}">
+                                                Ativo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-warning">Salvar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- CATEGORIAS DE DESPESA -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-folder me-2"></i>Categorias de Despesa</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('nova_categoria') }}" class="mb-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="nome" placeholder="Nome da categoria" required>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="tipo" required>
+                        <option value="FIXA">Fixa</option>
+                        <option value="VARIAVEL">Variável</option>
+                        <option value="SAIDA">Saída</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-warning w-100" type="submit">Adicionar</button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categorias %}
+                    <tr>
+                        <td>{{ cat.nome }}</td>
+                        <td><span class="badge bg-secondary">{{ cat.tipo }}</span></td>
+                        <td>
+                            {% if cat.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botão Editar -->
+                                <button type="button" class="btn btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editarCategoriaModal{{ cat.id }}"
+                                        title="Editar Categoria">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Botão Ativar/Desativar -->
+                                <form method="POST" action="{{ url_for('admin_toggle_categoria', categoria_id=cat.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja alterar o status desta categoria?')">
+                                    {% if cat.ativo %}
+                                        <button type="submit" class="btn btn-secondary" title="Desativar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-success" title="Ativar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botão Excluir -->
+                                <form method="POST" action="{{ url_for('admin_deletar_categoria', categoria_id=cat.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta categoria?')">
+                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal para Editar Categoria -->
+                    <div class="modal fade" id="editarCategoriaModal{{ cat.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">Editar Categoria</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_categoria', categoria_id=cat.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome</label>
+                                            <input type="text" class="form-control" name="nome" value="{{ cat.nome }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Tipo</label>
+                                            <select class="form-select" name="tipo" required>
+                                                <option value="FIXA" {% if cat.tipo == 'FIXA' %}selected{% endif %}>Fixa</option>
+                                                <option value="VARIAVEL" {% if cat.tipo == 'VARIAVEL' %}selected{% endif %}>Variável</option>
+                                                <option value="SAIDA" {% if cat.tipo == 'SAIDA' %}selected{% endif %}>Saída</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="ativo" id="ativoCategoria{{ cat.id }}"
+                                                   {% if cat.ativo %}checked{% endif %}>
+                                            <label class="form-check-label" for="ativoCategoria{{ cat.id }}">
+                                                Ativo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-warning">Salvar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MOTOBOYS -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-motorcycle me-2"></i>Motoboys</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('novo_motoboy') }}" class="mb-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="nome" placeholder="Nome do motoboy" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control currency-input" name="taxa_padrao" placeholder="Taxa padrão" value="5.00" required>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-dark w-100" type="submit">Adicionar</button>
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Taxa Padrão</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for motoboy in motoboys %}
+                    <tr>
+                        <td>{{ motoboy.nome }}</td>
+                        <td>{{ format_currency(motoboy.taxa_padrao) }}</td>
+                        <td>
+                            {% if motoboy.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botão Editar -->
+                                <button type="button" class="btn btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editarMotoboyModal{{ motoboy.id }}"
+                                        title="Editar Motoboy">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <!-- Botão Ativar/Desativar -->
+                                <form method="POST" action="{{ url_for('admin_toggle_motoboy', motoboy_id=motoboy.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja alterar o status deste motoboy?')">
+                                    {% if motoboy.ativo %}
+                                        <button type="submit" class="btn btn-secondary" title="Desativar">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-success" title="Ativar">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                                
+                                <!-- Botão Excluir -->
+                                <form method="POST" action="{{ url_for('admin_deletar_motoboy', motoboy_id=motoboy.id) }}" 
+                                      class="d-inline"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir este motoboy?')">
+                                    <button type="submit" class="btn btn-danger" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal para Editar Motoboy -->
+                    <div class="modal fade" id="editarMotoboyModal{{ motoboy.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-white">
+                                    <h5 class="modal-title">Editar Motoboy</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('admin_editar_motoboy', motoboy_id=motoboy.id) }}">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome</label>
+                                            <input type="text" class="form-control" name="nome" value="{{ motoboy.nome }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Taxa Padrão (R$)</label>
+                                            <input type="text" class="form-control currency-input" name="taxa_padrao" 
+                                                   value="{{ motoboy.taxa_padrao }}" required placeholder="0,00">
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="ativo" id="ativoMotoboy{{ motoboy.id }}"
+                                                   {% if motoboy.ativo %}checked{% endif %}>
+                                            <label class="form-check-label" for="ativoMotoboy{{ motoboy.id }}">
+                                                Ativo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-warning">Salvar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+    {% for usuario in usuarios %}
+    <div class="modal fade" id="modalSenha{{ usuario.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Alterar Senha - {{ usuario.nome }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin_editar_senha_usuario', usuario_id=usuario.id) }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" name="nova_senha" minlength="3" required>
+                            <small class="text-muted">Mínimo 3 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}

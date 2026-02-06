@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Editar Delivery #{{ delivery.id }}{% endblock %}
+{% block content %}
+{% set view_only = request.args.get('view') %}
+<div class="card">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>{% if view_only %}Detalhes do Delivery{% else %}Editar Delivery{% endif %} #{{ delivery.id }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Cliente</label>
+                    <input type="text" class="form-control" name="cliente" value="{{ delivery.cliente }}" required {% if view_only %}disabled{% endif %}>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Telefone</label>
+                    <input type="text" class="form-control" name="telefone" value="{{ delivery.telefone }}" required {% if view_only %}disabled{% endif %}>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Motoboy</label>
+                    <select class="form-select" name="motoboy_id" {% if view_only %}disabled{% endif %}>
+                        <option value="">Sem motoboy</option>
+                        {% for motoboy in motoboys %}
+                        <option value="{{ motoboy.id }}" {% if delivery.motoboy_id == motoboy.id %}selected{% endif %}>{{ motoboy.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Endereço</label>
+                <input type="text" class="form-control" name="endereco" value="{{ delivery.endereco }}" required {% if view_only %}disabled{% endif %}>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Total Pedido (R$)</label>
+                    <input type="text" class="form-control currency-input" name="total" value="{{ delivery.total }}" required {% if view_only %}disabled{% endif %} placeholder="0,00">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Taxa Entrega (R$)</label>
+                    <input type="text" class="form-control currency-input" name="taxa_entrega" value="{{ delivery.taxa_entrega }}" required {% if view_only %}disabled{% endif %} placeholder="0,00">
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="emitiu_nota" {% if delivery.emitiu_nota %}checked{% endif %} {% if view_only %}disabled{% endif %}>
+                        <label class="form-check-label">Emitiu Nota Fiscal</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Observação</label>
+                <textarea class="form-control" name="observacao" rows="2" {% if view_only %}disabled{% endif %}>{{ delivery.observacao }}</textarea>
+            </div>
+            
+            <h6 class="border-bottom pb-2">Formas de Pagamento</h6>
+            <div id="pagamentos">
+                {% for pag in delivery.pagamentos %}
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <select class="form-select" name="forma_pagamento_id[]" required {% if view_only %}disabled{% endif %}>
+                            {% for forma in formas_pagamento %}
+                            <option value="{{ forma.id }}" {% if pag.forma_pagamento_id == forma.id %}selected{% endif %}>{{ forma.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control currency-input" name="valor[]" value="{{ pag.valor }}" placeholder="Valor" required {% if view_only %}disabled{% endif %}>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if not view_only %}
+<button type="button" class="btn btn-sm btn-secondary mb-3" onclick="adicionarPagamento()">+ Adicionar Pagamento</button>
+{% endif %}
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+                <a href="{{ url_for('admin_visualizar_caixa', caixa_id=delivery.caixa_id) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function adicionarPagamento() {
+    const html = `
+        <div class="row mb-2">
+            <div class="col-md-6">
+                <select class="form-select" name="forma_pagamento_id[]" required {% if view_only %}disabled{% endif %}>
+                    {% for forma in formas_pagamento %}
+                    <option value="{{ forma.id }}">{{ forma.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control currency-input" name="valor[]" placeholder="Valor" required>
+            </div>
+        </div>
+    `;
+    document.getElementById('pagamentos').insertAdjacentHTML('beforeend', html);
+}
+</script>
+{% endblock %}

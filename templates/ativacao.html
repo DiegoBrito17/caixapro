@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ativação do Sistema</title>
+    
+    <!-- Bootstrap 5.1.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border: none;
+            padding: 12px 25px;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="card border-0">
+                    <div class="card-header bg-primary text-white text-center py-4">
+                        <h3 class="mb-0"><i class="fas fa-key me-2"></i>ATIVAÇÃO DO SISTEMA</h3>
+                        <p class="mb-0 mt-2">Sistema de Caixa - Versão 3.0</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Para usar o sistema:</strong> Digite seu e-mail e a chave de ativação fornecida.
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('ativacao') }}">
+                            <div class="mb-3">
+                                <label class="form-label">E-mail</label>
+                                <input type="email" class="form-control form-control-lg" name="email" 
+                                       placeholder="seu@email.com" required>
+                                <small class="text-muted">E-mail vinculado à licença</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Chave de Ativação</label>
+                                <input type="text" class="form-control form-control-lg" name="chave" 
+                                       placeholder="XXXX-XXXX-XXXX-XXXX" required>
+                                <small class="text-muted">Chave fornecida pelo desenvolvedor</small>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg py-3">
+                                    <i class="fas fa-check me-2"></i>Ativar Sistema
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-4 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Sistema protegido por licença. Entre em contato com o suporte para obter uma chave.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-3 border-secondary">
+                    <div class="card-body text-center">
+                        <h6><i class="fas fa-laptop me-2"></i>Informações do Dispositivo</h6>
+                        <small class="text-muted">
+                            Endereço IP: {{ request.remote_addr }}<br>
+                            Sistema será vinculado a este dispositivo
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
