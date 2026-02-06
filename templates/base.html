@@ -1768,6 +1768,19 @@
             const sidebarToggle = $('#sidebarToggle');
             const mobileMenuToggle = $('[data-sidebar-toggle="mobile"]');
             const sidebarOverlay = $('#sidebarOverlay');
+
+            function syncMobileToggleVisibility() {
+                if (window.matchMedia('(min-width: 993px)').matches) {
+                    mobileMenuToggle.css('display', 'none');
+                    sidebar.removeClass('mobile-open');
+                    sidebarOverlay.removeClass('active');
+                } else {
+                    mobileMenuToggle.css('display', '');
+                }
+            }
+
+            syncMobileToggleVisibility();
+            $(window).on('resize', syncMobileToggleVisibility);
             
             // Toggle desktop sidebar
             sidebarToggle.click(function() {
